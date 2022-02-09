@@ -23,8 +23,8 @@
 
 export MAX_WORKERS=$(python -c "import psutil; print(psutil.cpu_count(logical=False))")
 
-USERNAME='mluser' python shard_dataset.py \
-    --no-pylint run \
+USERNAME='mluser' python build_graphs.py \
+    run \
         --max-num-splits 6000 \
         --max-workers ${MAX_WORKERS} \
         \

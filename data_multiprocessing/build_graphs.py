@@ -41,9 +41,7 @@ class ShardDatasetFlow(FlowSpec):
     @step
     def start(self):
         """
-        The start step:
-        1) 
-        2) 
+        Create the constants for the rest of the Flow.
         """
         
         import numpy as np
@@ -53,9 +51,9 @@ class ShardDatasetFlow(FlowSpec):
         self.start_time = time.perf_counter()
 
         root_path = osp.dirname(osp.realpath(__file__))
-        data_path = osp.join(root_path, 'data')
-        self.raw_data_path = osp.join(data_path, 'raw')
-        self.processed_data_path = osp.join(data_path, 'processed')
+        self.data_path = osp.join(root_path, 'data')
+        self.raw_data_path = osp.join(self.data_path, 'raw')
+        self.processed_data_path = osp.join(self.data_path, 'processed')
         xps_path = osp.join(root_path, 'experiments')
 
         # Create all path for the current experiment
@@ -70,9 +68,11 @@ class ShardDatasetFlow(FlowSpec):
         xp_path = osp.join(xps_path, name)
         self.artifacts_path = osp.join(xp_path, 'artifacts')
         
+        # Make directories that do not exist
         for p in [self.processed_data_path, xp_path, self.artifacts_path]:
             os.makedirs(p, exist_ok=True)
 
+        # Build the graph connectivity matrix
         _directed_index = np.array([[*range(1, 138)], [*range(137)]])
         _undirected_index = np.hstack((
             _directed_index, 
@@ -80,6 +80,7 @@ class ShardDatasetFlow(FlowSpec):
         ))
         self.undirected_index = torch.tensor(_undirected_index, dtype=torch.long)
         
+        # Split the Flow and do slice_and_save for each subset
         self.shard = np.arange(self.num_shards)
         self.next(self.slice_and_save, foreach="shard")
                   
@@ -87,10 +88,13 @@ class ShardDatasetFlow(FlowSpec):
     @step
     def slice_and_save(self):
         """
-        
+        1) Read the raw data.
+        2) Feature engineer x and y.
+        3) Compute and save normalization factors for later use.
+        3) Sequentially iterate the sharded subset to create and save the graph for each row.
         """
         
-        import netCDF4
+        from netCDF4 import Dataset
         import torch
         import torch.nn.functional as F
         import torch_geometric as pyg
@@ -112,7 +116,7 @@ class ShardDatasetFlow(FlowSpec):
         
 
         in_path = osp.join(self.raw_data_path, f'data-{self.timestep}.nc')
-        with netCDF4.Dataset(in_path, "r", format="NETCDF4") as file:
+        with Dataset(in_path, "r", format="NETCDF4") as file:
             self.dataset_size = file.dimensions['column'].size
             start, end = slice_indices(self.dataset_size, self.num_shards, self.input)
             
@@ -141,6 +145,17 @@ class ShardDatasetFlow(FlowSpec):
             torch.unsqueeze(flux_dn_lw, -1),
             torch.unsqueeze(flux_up_lw, -1),
         ], dim=-1)
+        
+        if self.num_shards == 1:
+            stats_path = os.path.join(self.data_path, f"stats-{self.timestep}.pt")
+            if not os.path.isfile(stats_path):
+                stats = {
+                    "x_mean" : torch.mean(x, dim=0),
+                    "y_mean" : torch.mean(y, dim=0),
+                    "x_std" : torch.std(x, dim=0),
+                    "y_std" : torch.std(y, dim=0)
+                }
+                torch.save(stats, stats_path)
             
         data_list = []
 

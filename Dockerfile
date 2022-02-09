@@ -132,8 +132,10 @@ RUN pip install --user climetlab \
 
 
 # ---------------------------------------
-# Quick config for Jupyter
+# Misc configuration
 RUN mkdir ${HOME}/.jupyter
 COPY resources/jupyter_server_config.py ${HOME}/.jupyter/
+
+COPY resources/.pylintrc ${HOME}
 
 CMD ["bash"]

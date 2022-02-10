@@ -21,7 +21,7 @@
 
 FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
 
-LABEL maintainer="mluser"
+LABEL maintainer="mlops"
 LABEL name="Thessaloniki"
 LABEL type="Development Image"
 
@@ -43,9 +43,11 @@ RUN apt install -y build-essential \
                    python3.9 \
                    python3.9-dev \
                    python3.9-full \
+                   diffutils \
                    libblas-dev \
                    liblapack-dev \
                    libatlas-base-dev \
+                   cmake \
                    gfortran \
                    man-db \
                    git \
@@ -58,84 +60,79 @@ RUN apt install -y build-essential \
     && apt clean all \
     && rm -rf /var/cache/apt/*
 
-RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-
 RUN ln -snf python3 /usr/bin/python
 RUN ln -snf pip3 /usr/bin/pip
 
 
 # ---------------------------------------
-# Create mluser and make it sudoer
-ENV USER mluser
-ENV HOME /home/${USER}
+# Upgrade pip and install wheel
 
-RUN adduser --disabled-password --gecos "" ${USER} \
-    && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-USER ${USER}
-WORKDIR ${HOME}
-ENV PATH "${HOME}/.local/bin:${PATH}"
-
-RUN echo "http_proxy = ${http_proxy}" >> ~/.wgetrc \
-    && echo "https_proxy = ${http_proxy}" >> ~/.wgetrc \
+RUN echo "http_proxy = ${http_proxy}" >> ${HOME}/.wgetrc \
+    && echo "https_proxy = ${http_proxy}" >> ${HOME}/.wgetrc \
     && wget https://bootstrap.pypa.io/get-pip.py \
     && python3 get-pip.py \
     && rm get-pip.py
-
-
-# ---------------------------------------
-# Upgrade pip and install wheel
 RUN pip install --upgrade pip
-RUN pip install --user wheel
+RUN pip install wheel
 
 
 # ---------------------------------------
 # Install PyTorch and PyG
-RUN pip install --user torch==1.10.2+cu113 \
-                       torchvision==0.11.3+cu113 \
-                       torchaudio===0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+RUN pip install torch==1.10.2+cu113 \
+                torchvision==0.11.3+cu113 \
+                torchaudio===0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 
-RUN pip install --user torch-scatter \
-                       torch-sparse \
-                       torch-cluster \
-                       torch-spline-conv \
-                       torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
+RUN pip install torch-scatter \
+                torch-sparse \
+                torch-cluster \
+                torch-spline-conv \
+                torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
 
 
 # ---------------------------------------
 # Install TensorFlow, TensorBoard and TFX
-RUN pip install --user tensorflow
+RUN pip install tensorflow
 
 
 # ---------------------------------------
 # Install a few other usefull packages for scientific-ML
-RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install --user bottleneck
-RUN pip install --user climetlab \
-                       dask \
-                       h5py \
-                       matplotlib \
-                       metaflow \
-                       memory_profiler \
-                       netCDF4 \
-                       jupyterlab \
-                       numpy \
-                       nvitop \
-                       pandas \
-                       plotly \
-                       pytorch-lightning \
-                       PyYAML \
-                       randomname \
-                       scipy \
-                       sklearn \
-                       torchmetrics \
-                       torch_optimizer \
-                       xarray
+WORKDIR /tmp/
+ENV ECCODES eccodes-2.24.0-Source
+RUN wget https://confluence.ecmwf.int/download/attachments/45757960/${ECCODES}.tar.gz?api=v2 -O ${ECCODES}.tar.gz \
+    && tar zxf ${ECCODES}.tar.gz \
+    && mkdir build; cd build \
+    && cmake ../${ECCODES} \
+    && make \
+    && ctest --rerun-failed --output-on-failure \
+    && make install
+RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
+RUN pip install climetlab \
+                climetlab-maelstrom-radiation
+                dask \
+                h5py \
+                matplotlib \
+                metaflow \
+                memory_profiler \
+                netCDF4 \
+                jupyterlab \
+                numpy \
+                nvitop \
+                pandas \
+                plotly \
+                pytorch-lightning \
+                PyYAML \
+                randomname \
+                scipy \
+                sklearn \
+                torchmetrics \
+                torch_optimizer \
+                xarray
 
 
 # ---------------------------------------
 # Misc configuration
 RUN mkdir ${HOME}/.jupyter
-COPY resources/jupyter_server_config.py ${HOME}/.jupyter/
-
-COPY resources/.pylintrc ${HOME}
+COPY jupyter_server_config.py ${HOME}/.jupyter/
+COPY .pylintrc ${HOME}
 
 CMD ["bash"]

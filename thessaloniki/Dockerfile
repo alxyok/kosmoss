@@ -107,7 +107,8 @@ RUN wget https://confluence.ecmwf.int/download/attachments/45757960/${ECCODES}.t
     && make install
 RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
 RUN pip install climetlab \
-                climetlab-maelstrom-radiation
+                climetlab-maelstrom-nogwd \
+                climetlab-maelstrom-radiation \
                 dask \
                 h5py \
                 matplotlib \
@@ -135,4 +136,4 @@ RUN mkdir ${HOME}/.jupyter
 COPY jupyter_server_config.py ${HOME}/.jupyter/
 COPY .pylintrc ${HOME}
 
-CMD ["bash"]
+CMD ["jupyter", "lab"]

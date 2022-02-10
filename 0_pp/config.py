@@ -25,9 +25,9 @@ import os.path as osp
 import logging
 import randomname
 
-root_path = osp.dirname(os.path.realpath(__file__))
+root_path = osp.join(osp.dirname(os.path.realpath(__file__)), '..')
 
-data_path = osp.join(root_path, 'data')
+data_path = osp.join(root_path, 'data', 'weather_forecast', '3dcorrection')
 cache_data_path = osp.join(data_path, 'cache')
 raw_data_path = osp.join(data_path, 'raw')
 processed_data_path = osp.join(data_path, 'processed')

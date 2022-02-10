@@ -1,4 +1,3 @@
-#!/usr/bin/bash
 # MIT License
 # 
 # Copyright (c) 2022 alxyok
@@ -21,12 +20,3 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-export MAX_WORKERS=$(python -c "import psutil; print(psutil.cpu_count(logical=False))")
-
-USERNAME='mluser' python 1_build_graphs.py \
-    run \
-        --max-num-splits 6000 \
-        --max-workers ${MAX_WORKERS} \
-        \
-        --num_shards 106 \
-        --timestep 1000

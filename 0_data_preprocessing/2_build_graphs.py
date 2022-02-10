@@ -47,7 +47,7 @@ class BuildGraphsFlow(FlowSpec):
             
         self.data_path = osp.join(root_path, 'data')
         self.raw_data_path = osp.join(self.data_path, 'raw')
-        self.processed_data_path = osp.join(self.data_path, 'processed')
+        self.processed_data_path = osp.join(self.data_path, 'processed', 'graphs')
         xps_path = osp.join(root_path, 'experiments')
 
         # Create all path for the current experiment

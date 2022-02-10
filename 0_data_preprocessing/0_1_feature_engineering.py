@@ -28,6 +28,7 @@ import json
 import numpy as np
 import os.path as osp
 import time
+from typing import Union
 import xarray as xr
 
 import config
@@ -40,9 +41,10 @@ def broadcast_features(tensor):
 def pad_tensor(tensor):
     return da.pad(tensor, ((0, 0), (1, 1), (0, 0)))
 
-
-def main():
+def perform(save_format: Union['npy', 'h5']):
+    
     start_time = time.perf_counter()
+    
     features = [
         'sca_inputs',
         'col_inputs',
@@ -56,7 +58,7 @@ def main():
 
     data = {}
 
-    shards = glob(osp.join(config.processed_data_path, 'shards', '*.h5'))
+    shards = glob(osp.join(config.processed_data_path, 'shards_h5', '*.h5'))
     with xr.open_mfdataset(shards, chunks=-1, combine="nested", concat_dim="concat_dim", parallel=True) as dataset:
 
         # all this is lazy
@@ -79,40 +81,18 @@ def main():
             data['flux_dn_lw'][..., np.newaxis],
             data['flux_up_lw'][..., np.newaxis],
         ], axis=-1)
-
-        # still...
-        x_mean = da.mean(x, axis=0)
-        y_mean = da.mean(y, axis=0)
-        x_std = da.std(x, axis=0)
-        y_std = da.std(y, axis=0)
-
-        stats_path = osp.join(config.data_path, f"stats-{config.params['timestep']}.h5")
-        if not osp.isfile(stats_path) or config.params['force']:
-            with File(stats_path, 'w') as file:
-                tic = time.perf_counter()
-                file.create_dataset("x_mean", data=x_mean)
-                file.create_dataset("y_mean", data=y_mean)
-                file.create_dataset("x_std", data=x_std)
-                file.create_dataset("y_std", data=y_std)
-                tac = time.perf_counter()
-
-            end_time = time.perf_counter()
-            exec_time = int(end_time - start_time)
-            normalization_time = int(tac - tic)
-
-            print(f'Total execution time: ~{exec_time}s.')
-
-            # Print execution time in a JSON file
-            with open(osp.join(config.artifacts_path, 'results.json'), 'w') as file:
-                json.dump({
-                    'exec_time': exec_time,
-                    'normalization_time': normalization_time
-                }, file)
-                
-        else:
-            print(f'File: {stats_path} exists, force with option `force` at `True` in config.yaml')
         
+        if save_format == 'npy':
+            out_path = osp.join(config.processed_data_path, 'feats_npy')
+            da.to_npy_stack(osp.join(out_path, 'x'), x)
+            da.to_npy_stack(osp.join(out_path, 'y'), y)
+        elif save_format == 'h5':
+            out_path = osp.join(config.processed_data_path, 'feats_h5')
+            x.to_hdf5(out_path, '/x')
+            y.to_hdf5(out_path, '/y')
+
+    return x, y
         
 if __name__ == '__main__':
     
-    main()
+    perform(config.params['shard_save_format'])

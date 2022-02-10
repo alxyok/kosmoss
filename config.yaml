@@ -1,3 +1,4 @@
 timestep: 1000
 force: True
 num_shards: 106
+shard_save_format: "npy"

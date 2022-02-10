@@ -35,12 +35,12 @@ import config
 def main():
     start_time = time.perf_counter()
 
-    shards = glob(osp.join(config.processed_data_path, 'shards_h5', '*.h5'))
-    with xr.open_mfdataset(shards, chunks=-1, combine="nested", concat_dim="concat_dim", parallel=True) as dataset:
+    npy_stack_path = osp.join(config.processed_data_path, 'feats_npy')
+    with da.from_npy_stack(npy_stack_path) as array:
 
         # still...
-        x_mean = da.mean(x, axis=0)
-        y_mean = da.mean(y, axis=0)
+        x_mean = array.mean(x, axis=0)
+        y_mean = array.mean(y, axis=0)
         x_std = da.std(x, axis=0)
         y_std = da.std(y, axis=0)
 

@@ -53,7 +53,7 @@ class ShardToH5Flow(FlowSpec):
         root_path = osp.join(osp.dirname(osp.realpath(__file__)), '..')
         self.data_path = osp.join(root_path, 'data')
         self.raw_data_path = osp.join(self.data_path, 'raw')
-        self.processed_data_path = osp.join(self.data_path, 'processed', 'shards')
+        self.processed_data_path = osp.join(self.data_path, 'processed', 'shards_h5')
         xps_path = osp.join(root_path, 'experiments')
 
         # Create all path for the current experiment

@@ -36,39 +36,40 @@ def main():
     start_time = time.perf_counter()
 
     npy_stack_path = osp.join(config.processed_data_path, 'feats_npy')
-    with da.from_npy_stack(npy_stack_path) as array:
+    x = da.from_npy_stack(osp.join(npy_stack_path, 'x'))
+    y = da.from_npy_stack(osp.join(npy_stack_path, 'y'))
 
-        # still...
-        x_mean = array.mean(x, axis=0)
-        y_mean = array.mean(y, axis=0)
-        x_std = da.std(x, axis=0)
-        y_std = da.std(y, axis=0)
+    # still...
+    x_mean = array.mean(x, axis=0)
+    y_mean = array.mean(y, axis=0)
+    x_std = da.std(x, axis=0)
+    y_std = da.std(y, axis=0)
 
-        stats_path = osp.join(config.data_path, f"stats-{config.params['timestep']}.h5")
-        if not osp.isfile(stats_path) or config.params['force']:
-            with File(stats_path, 'w') as file:
-                tic = time.perf_counter()
-                file.create_dataset("x_mean", data=x_mean)
-                file.create_dataset("y_mean", data=y_mean)
-                file.create_dataset("x_std", data=x_std)
-                file.create_dataset("y_std", data=y_std)
-                tac = time.perf_counter()
+    stats_path = osp.join(config.data_path, f"stats-{config.params['timestep']}.h5")
+    if not osp.isfile(stats_path) or config.params['force']:
+        with File(stats_path, 'w') as file:
+            tic = time.perf_counter()
+            file.create_dataset("x_mean", data=x_mean)
+            file.create_dataset("y_mean", data=y_mean)
+            file.create_dataset("x_std", data=x_std)
+            file.create_dataset("y_std", data=y_std)
+            tac = time.perf_counter()
 
-            end_time = time.perf_counter()
-            exec_time = int(end_time - start_time)
-            normalization_time = int(tac - tic)
+        end_time = time.perf_counter()
+        exec_time = int(end_time - start_time)
+        normalization_time = int(tac - tic)
 
-            print(f'Total execution time: ~{exec_time}s.')
+        print(f'Total execution time: ~{exec_time}s.')
 
-            # Print execution time in a JSON file
-            with open(osp.join(config.artifacts_path, 'results.json'), 'w') as file:
-                json.dump({
-                    'exec_time': exec_time,
-                    'normalization_time': normalization_time
-                }, file)
-                
-        else:
-            print(f'File: {stats_path} exists, force with option `force` at `True` in config.yaml')
+        # Print execution time in a JSON file
+        with open(osp.join(config.artifacts_path, 'results.json'), 'w') as file:
+            json.dump({
+                'exec_time': exec_time,
+                'normalization_time': normalization_time
+            }, file)
+
+    else:
+        print(f'File: {stats_path} exists, force with option `force` at `True` in config.yaml')
         
         
 if __name__ == '__main__':

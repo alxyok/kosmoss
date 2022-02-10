@@ -35,7 +35,7 @@ ENV HTTP_PROXY ${PROXY}
 
 
 # ---------------------------------------
-# Install Python 3.9, Git and others
+# Install low-level dependencies
 RUN echo "Acquire::http::Proxy \"${http_proxy}\";" >> /etc/apt/apt.conf
 RUN apt update -y && apt upgrade -y
 RUN DEBIAN_FRONTEND=noninteractive TZ=Europe/Paris apt -y install tzdata
@@ -47,6 +47,7 @@ RUN apt install -y build-essential \
                    libblas-dev \
                    liblapack-dev \
                    libatlas-base-dev \
+                   libglib2.0-0 \
                    cmake \
                    gfortran \
                    man-db \
@@ -66,7 +67,6 @@ RUN ln -snf pip3 /usr/bin/pip
 
 # ---------------------------------------
 # Upgrade pip and install wheel
-
 RUN echo "http_proxy = ${http_proxy}" >> ${HOME}/.wgetrc \
     && echo "https_proxy = ${http_proxy}" >> ${HOME}/.wgetrc \
     && wget https://bootstrap.pypa.io/get-pip.py \
@@ -90,14 +90,14 @@ RUN pip install torch-scatter \
 
 
 # ---------------------------------------
-# Install TensorFlow, TensorBoard and TFX
+# Install TensorFlow + TensorBoard
 RUN pip install tensorflow
 
 
 # ---------------------------------------
 # Install a few other usefull packages for scientific-ML
 WORKDIR /tmp/
-ENV ECCODES eccodes-2.24.0-Source
+ENV ECCODES "eccodes-2.24.0-Source"
 RUN wget https://confluence.ecmwf.int/download/attachments/45757960/${ECCODES}.tar.gz?api=v2 -O ${ECCODES}.tar.gz \
     && tar zxf ${ECCODES}.tar.gz \
     && mkdir build; cd build \
@@ -134,6 +134,6 @@ RUN pip install climetlab \
 # Misc configuration
 RUN mkdir ${HOME}/.jupyter
 COPY jupyter_server_config.py ${HOME}/.jupyter/
-COPY .pylintrc ${HOME}
+COPY .pylintrc /etc/pylintrc
 
 CMD ["jupyter", "lab"]

@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 # MIT License
 # 
 # Copyright (c) 2022 alxyok
@@ -20,3 +21,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+while getopts s: flag
+do
+    case "${flag}" in
+        s) script=${OPTARG};;
+    esac
+done
+
+export MAX_WORKERS=$(python -c "import psutil; print(psutil.cpu_count(logical=False))")
+
+USERNAME='mluser' python ${script} \
+    run \
+        --max-num-splits 6000 \
+        --max-workers ${MAX_WORKERS} \

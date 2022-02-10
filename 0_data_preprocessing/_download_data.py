@@ -20,3 +20,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import climetlab as cml
+import os
+import os.path as osp
+
+import config
+
+cml.settings.set("cache-directory", config.cache_data_path)
+
+cmlds = cml.load_dataset(
+    'maelstrom-radiation', 
+    dataset='3dcorrection', 
+    raw_inputs=False, 
+    timestep=list(range(0, 3501, config.params['timestep'])), 
+    minimal_outputs=False,
+    patch=list(range(0, 16, 1)),
+    hr_units='K d-1',
+)
+
+array = cmlds.to_xarray()
+array.to_netcdf(osp.join(config.raw_data_path, f'data-{config.params["timestep"]}.nc'))

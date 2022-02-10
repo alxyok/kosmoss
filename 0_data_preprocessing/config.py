@@ -24,10 +24,12 @@ import os
 import os.path as osp
 import logging
 import randomname
+import sys
+import yaml
 
 root_path = osp.join(osp.dirname(os.path.realpath(__file__)), '..')
 
-data_path = osp.join(root_path, 'data', 'weather_forecast', '3dcorrection')
+data_path = osp.join(root_path, 'data')
 cache_data_path = osp.join(data_path, 'cache')
 raw_data_path = osp.join(data_path, 'raw')
 processed_data_path = osp.join(data_path, 'processed')
@@ -47,20 +49,25 @@ experiment_path = osp.join(experiments_path, _experiment_name)
 
 logs_path = osp.join(experiment_path, 'logs')
 artifacts_path = osp.join(experiment_path, 'artifacts')
-plots_path = osp.join(experiment_path, 'plots')
 
 _paths = [
+    data_path,
+    cache_data_path,
+    raw_data_path,
+    processed_data_path,
     experiment_path, 
     logs_path, 
     artifacts_path, 
-    plots_path
 ]
 for path in _paths:
     os.makedirs(path, exist_ok=True)
     
-logging.basicConfig(filename=osp.join(logs_path, f'{_experiment_name}.log'), 
-                    filemode='w', 
-                    format='%(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("")
+logger.addHandler(logging.StreamHandler(sys.stdout))
+# .basicConfig(filename=osp.join(logs_path, f'{_experiment_name}.log'), 
+#                     filemode='w', 
+#                     format='%(name)s - %(levelname)s - %(message)s')
 
 
-step = 1000
+with open(osp.join(root_path, "config.yaml"), "r") as stream:
+    params = yaml.safe_load(stream)

@@ -34,40 +34,17 @@ cache_data_path = osp.join(data_path, 'cache')
 raw_data_path = osp.join(data_path, 'raw')
 processed_data_path = osp.join(data_path, 'processed')
 
-# Create all path for the current experiment
-experiments_path = osp.join(root_path, 'experiments')
-os.makedirs(experiments_path, exist_ok=True)
-_existing_xps = os.listdir(experiments_path)
-
-# Generate experiment name
-_randomize_name = True
-while _randomize_name:
-    _experiment_name = randomname.get_name()
-    if _experiment_name not in _existing_xps:
-        break
-experiment_path = osp.join(experiments_path, _experiment_name)
-
-logs_path = osp.join(experiment_path, 'logs')
-artifacts_path = osp.join(experiment_path, 'artifacts')
-
 _paths = [
     data_path,
     cache_data_path,
     raw_data_path,
     processed_data_path,
-    experiment_path, 
-    logs_path, 
-    artifacts_path, 
 ]
 for path in _paths:
     os.makedirs(path, exist_ok=True)
     
 logger = logging.getLogger("")
 logger.addHandler(logging.StreamHandler(sys.stdout))
-# .basicConfig(filename=osp.join(logs_path, f'{_experiment_name}.log'), 
-#                     filemode='w', 
-#                     format='%(name)s - %(levelname)s - %(message)s')
-
 
 with open(osp.join(root_path, "config.yaml"), "r") as stream:
     params = yaml.safe_load(stream)

@@ -39,43 +39,8 @@ class BuildGraphsFlow(FlowSpec):
         import torch
         import yaml
         
-        self.start_time = time.perf_counter()
-
-        root_path = osp.join(osp.dirname(osp.realpath(__file__)), '..')
-        with open(osp.join(root_path, "config.yaml"), "r") as stream:
-            self.params = yaml.safe_load(stream)
-            
-        self.data_path = osp.join(root_path, 'data')
-        self.raw_data_path = osp.join(self.data_path, 'raw')
-        self.processed_data_path = osp.join(self.data_path, 'processed', 'graphs')
-        xps_path = osp.join(root_path, 'experiments')
-
-        # Create all path for the current experiment
-        os.makedirs(xps_path, exist_ok=True)
-        existing_xps = os.listdir(xps_path)
-
-        # Generate experiment name
-        _randomize = True
-        while _randomize:
-            name = randomname.get_name()
-            if name not in xps_path: _randomize = False
-        xp_path = osp.join(xps_path, name)
-        self.artifacts_path = osp.join(xp_path, 'artifacts')
-        
-        # Make directories that do not exist
-        for p in [self.processed_data_path, xp_path, self.artifacts_path]:
-            os.makedirs(p, exist_ok=True)
-
-        # Build the graph connectivity matrix
-        _directed_index = np.array([[*range(1, 138)], [*range(137)]])
-        _undirected_index = np.hstack((
-            _directed_index, 
-            _directed_index[[1, 0], :]
-        ))
-        self.undirected_index = torch.tensor(_undirected_index, dtype=torch.long)
-        
         # Split the Flow and do slice_and_save for each subset
-        self.shard = np.arange(self.params['num_shards'])
+        self.x_shards = osp.join(config.processed_data_path, 'feats_npy'
         self.next(self.slice_and_save, foreach="shard")
                   
                   
@@ -92,57 +57,10 @@ class BuildGraphsFlow(FlowSpec):
         import torch
         import torch.nn.functional as F
         import torch_geometric as pyg
-
-        # Feature engineering, node feature alignment
-        def broadcast_features(tensor):
-            t = torch.unsqueeze(tensor, -1)
-            t = t.repeat((1, 1, 138))
-            t = t.moveaxis(1, -1)
-            return t
-        def pad_tensor(tensor):
-            return F.pad(tensor, (0, 0, 1, 1, 0, 0))
-
-        # Calculate slice start and end indices
-        def slice_indices(dataset_size, num_shards, idx=0):
-            rows_per_shard = dataset_size // num_shards
-            start = idx * rows_per_shard
-            end = start + rows_per_shard
-            return start, end
         
         # Read the raw data file and extract the desired features
         in_path = osp.join(self.raw_data_path, f"data-{self.params['timestep']}.nc")
-        with Dataset(in_path, "r", format="NETCDF4") as file:
-            self.dataset_size = file.dimensions['column'].size
-            start, end = slice_indices(self.dataset_size, self.params['num_shards'], self.input)
-            
-            sca_inputs = torch.tensor(file['sca_inputs'][start:end])
-            # TODO: Use col_inputs for edge_attr
-            col_inputs = torch.tensor(file['col_inputs'][start:end])
-            hl_inputs = torch.tensor(file['hl_inputs'][start:end])
-            inter_inputs = torch.tensor(file['inter_inputs'][start:end])
-
-            flux_dn_sw = torch.tensor(file['flux_dn_sw'][start:end])
-            flux_up_sw = torch.tensor(file['flux_up_sw'][start:end])
-            flux_dn_lw = torch.tensor(file['flux_dn_lw'][start:end])
-            flux_up_lw = torch.tensor(file['flux_up_lw'][start:end])
-
-        inter_inputs_ = pad_tensor(inter_inputs)
-        sca_inputs_ = broadcast_features(sca_inputs)
-
-        # Feature engineering, build an input x with 20 features
-        x = torch.cat([
-            hl_inputs,
-            inter_inputs_,
-            sca_inputs_
-        ], dim=-1)
-
-        # Feature engineering, build ground truth with 4 features
-        y = torch.cat([
-            torch.unsqueeze(flux_dn_sw, -1),
-            torch.unsqueeze(flux_up_sw, -1),
-            torch.unsqueeze(flux_dn_lw, -1),
-            torch.unsqueeze(flux_up_lw, -1),
-        ], dim=-1)
+        np.memmap(
         
         # Compute normalization factors if dataset is complete
         # Serialize stats on disk

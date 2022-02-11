@@ -25,18 +25,10 @@ import os
 import os.path as osp
 import time
 
+import config
+
 
 class ShardToH5Flow(FlowSpec):
-    
-    num_shards = Parameter(
-        'num_shards',
-        help="Desired number of shards.",
-        default=2 * 53)
-    
-    timestep = Parameter(
-        'timestep',
-        help="Dataset timestep.",
-        default=1000)
         
     @step
     def start(self):
@@ -48,29 +40,7 @@ class ShardToH5Flow(FlowSpec):
         import randomname
         import torch
         
-        self.start_time = time.perf_counter()
-
-        root_path = osp.join(osp.dirname(osp.realpath(__file__)), '..')
-        self.data_path = osp.join(root_path, 'data')
-        self.raw_data_path = osp.join(self.data_path, 'raw')
-        self.processed_data_path = osp.join(self.data_path, 'processed', 'shards_h5')
-        xps_path = osp.join(root_path, 'experiments')
-
-        # Create all path for the current experiment
-        os.makedirs(xps_path, exist_ok=True)
-        existing_xps = os.listdir(xps_path)
-
-        # Generate experiment name
-        _randomize = True
-        while _randomize:
-            name = randomname.get_name()
-            if name not in xps_path: _randomize = False
-        xp_path = osp.join(xps_path, name)
-        self.artifacts_path = osp.join(xp_path, 'artifacts')
-        
-        # Make directories that do not exist
-        for p in [self.processed_data_path, xp_path, self.artifacts_path]:
-            os.makedirs(p, exist_ok=True)
+        self.params = config.params
         
         # Split the Flow and do slice_and_save for each subset
         self.shard = np.arange(self.num_shards)

@@ -77,6 +77,11 @@ RUN pip install wheel
 
 
 # ---------------------------------------
+# Install cuPy
+RUN pip install cupy-cuda113
+
+
+# ---------------------------------------
 # Install PyTorch and PyG
 RUN pip install torch==1.10.2+cu113 \
                 torchvision==0.11.3+cu113 \

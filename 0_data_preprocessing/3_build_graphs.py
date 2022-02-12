@@ -35,12 +35,12 @@ class BuildGraphsFlow(FlowSpec):
         """
         
         import numpy as np
-        import randomname
-        import torch
         import yaml
         
         # Split the Flow and do slice_and_save for each subset
-        self.x_shards = osp.join(config.processed_data_path, 'feats_npy'
+        step = 250
+        self.shards_path = osp.join(config.processed_data_path, f'feats-{step}', 'concat')
+        self.shard = np.arange(53 * 2 ** 3)
         self.next(self.slice_and_save, foreach="shard")
                   
                   

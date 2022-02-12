@@ -41,6 +41,7 @@ class ThreeDCorrectionDataset(pyg.data.Dataset):
     
     def __init__(self, root, step, force=False):
         self.step = step
+        self.params = 
         
         super().__init__(root)
         

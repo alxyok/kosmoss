@@ -1,0 +1,1 @@
+{"dataset_len": 4070400, "num_shards": 424, "shard_shape": [9600, 136, 17], "dtype": "float32", "timestep": 250}

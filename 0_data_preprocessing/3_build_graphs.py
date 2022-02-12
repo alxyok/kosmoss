@@ -25,8 +25,17 @@ import os
 import os.path as osp
 import time
 
+import config
+
 
 class BuildGraphsFlow(FlowSpec):
+    
+    
+    # myfile = IncludeFile(
+    #     'myfile',
+    #     is_text=False,
+    #     help='My input',
+    #     default='/Users/bob/myinput.bin')
         
     @step
     def start(self):
@@ -35,12 +44,15 @@ class BuildGraphsFlow(FlowSpec):
         """
         
         import numpy as np
-        import yaml
+        import json
         
         # Split the Flow and do slice_and_save for each subset
-        step = 250
         self.shards_path = osp.join(config.processed_data_path, f'feats-{step}', 'concat')
-        self.shard = np.arange(53 * 2 ** 3)
+        
+        with open(osp.join(config.root_path, "params.json"), "r") as stream:
+            self.params = json.load(stream)
+            
+        self.shard = np.arange(self.params['num_shards'])
         self.next(self.slice_and_save, foreach="shard")
                   
                   
@@ -53,51 +65,48 @@ class BuildGraphsFlow(FlowSpec):
         3) Sequentially iterate the sharded subset to create and save the graph for each row.
         """
         
-        from netCDF4 import Dataset
+        import numpy as np
         import torch
         import torch.nn.functional as F
         import torch_geometric as pyg
         
         # Read the raw data file and extract the desired features
-        in_path = osp.join(self.raw_data_path, f"data-{self.params['timestep']}.nc")
-        np.memmap(
+        filepath = osp.join(config.processed_data_path, f"feats-{self.params['timestep']}", "concat", f"{self.input}.npy")
         
-        # Compute normalization factors if dataset is complete
-        # Serialize stats on disk
-        self.normalization_time = '-'
-        if self.params['num_shards'] == 1:
-            stats_path = os.path.join(self.data_path, f"stats-{self.params['timestep']}.pt")
-            if not os.path.isfile(stats_path) or self.params['force']:
-                tic = time.perf_counter()
-                stats = {
-                    "x_mean" : torch.mean(x, dim=0),
-                    "y_mean" : torch.mean(y, dim=0),
-                    "x_std" : torch.std(x, dim=0),
-                    "y_std" : torch.std(y, dim=0)
-                }
-                tac = time.perf_counter()
-                torch.save(stats, stats_path)
-                self.normalization_time = int(tac - tic)
-            
-        # Build a graph based on x, y, edge attribute features and connectivity matrix
+        data = np.memmap(
+            filepath, 
+            dtype=self.params['dtype'],
+            mode='r',
+            shape=tuple(self.params['shard_shape']))
+        
+        x = torch.tensor(data[..., :20])
+        y = torch.tensor(data[..., 20:])
+        
         data_list = []
-        for idx in range(x.shape[0]):
+        
+        directed_index = np.array([[*range(1, 138)], [*range(137)]])
+        undirected_index = np.hstack((
+            directed_index, 
+            directed_index[[1, 0], :]
+        ))
+        undirected_index = torch.tensor(undirected_index, dtype=torch.long)
+        for idx in range(len(data)):
             x_ = torch.squeeze(x[idx, ...])
             y_ = torch.squeeze(y[idx, ...])
 
-            edge_attr = torch.squeeze(sca_inputs_[idx, ...])
+            # edge_attr = torch.squeeze(sca_inputs_[idx, ...])
 
             data = pyg.data.Data(
                 x=x_,
-                edge_attr=edge_attr,
-                edge_index=self.undirected_index,
+                # edge_attr=edge_attr,
+                edge_index=undirected_index,
                 y=y_,
             )
 
             data_list.append(data)
         
         # Save the bulk of graph in a separate file
-        out_path = osp.join(self.processed_data_path, f"data-{self.params['timestep']}.{self.input}.pt")
+        out_path = osp.join(config.processed_data_path, f"data-{self.params['timestep']}.{self.input}.pt")
         torch.save(data_list, out_path)
         
         self.next(self.join)
@@ -108,32 +117,6 @@ class BuildGraphsFlow(FlowSpec):
         """
         Join the parallel branches. Compile results, print execution time.
         """
-        
-        import json
-        
-        # Gather properties defined in previous steps
-        self.merge_artifacts(inputs, include=[
-            'start_time',
-            'artifacts_path',
-            'dataset_size',
-            'normalization_time',
-            'params'
-        ])
-        
-        self.end_time = time.perf_counter()
-        exec_time = int(self.end_time - self.start_time)
-        
-        print(f'Total execution time: ~{exec_time}s.')
-        
-        # Print execution time in a JSON file
-        with open(osp.join(self.artifacts_path, 'results.json'), 'w') as file:
-            json.dump({
-                'max_workers': int(os.environ['MAX_WORKERS']),
-                'dataset_size': self.dataset_size,
-                'num_shards': self.params['num_shards'],
-                'exec_time': exec_time,
-                'normalization_time': self.normalization_time
-            }, file)
         
         self.next(self.end)
         

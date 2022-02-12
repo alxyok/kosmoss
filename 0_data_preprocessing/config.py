@@ -47,4 +47,7 @@ logger = logging.getLogger("")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 with open(osp.join(root_path, "config.yaml"), "r") as stream:
-    params = yaml.safe_load(stream)
+    config = yaml.safe_load(stream)
+
+with open(osp.join(root_path, "params.json"), "r") as stream:
+    params = json.load(stream)

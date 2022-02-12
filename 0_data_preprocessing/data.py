@@ -25,6 +25,7 @@ from memory_profiler import profile
 import networkx as nx
 import numpy as np
 import os
+import os.path as osp
 import pytorch_lightning as pl
 from pytorch_lightning.utilities.cli import DATAMODULE_REGISTRY
 import torch
@@ -36,10 +37,36 @@ import netCDF4
 from tqdm import tqdm
 
 import config
+from build_graphs import BuildGraphsFlow
 
 class GraphDataset(torch.utils.data.Dataset):
     
-    def __init__(self):
+    def __init__(self, mode="train"):
+        super().__init__()
+        
+        directed_index = np.array([[*range(1, 138)], [*range(137)]])
+        undirected_index = np.hstack((
+            directed_index, 
+            directed_index[[1, 0], :]
+        ))
+        self.undirected_index = torch.tensor(undirected_index, dtype=torch.long)
+    
+    def raw_file_names(self):
+        return None
+    
+    def processed_file_names(self):
+        return [f"data-{config.params['timestep']}.{k}.pt" 
+                for k in np.arange(config.params['num_shards'])]
+    
+    def download(self):
+        pass
+    
+    def process(self):
+        BuildGraphsFlow()
+
+class GraphDataset(pyg.data.Dataset):
+    
+    def __init__(self, mode="train"):
         super().__init__()
         
         directed_index = np.array([[*range(1, 138)], [*range(137)]])
@@ -61,7 +88,7 @@ class GraphDataset(torch.utils.data.Dataset):
             path, 
             dtype = config.params['dtype'],
             mode='r',
-            shape=config.params['shape']
+            shape=config.params['shard_shape']
         )
         
         x = torch.squeeze(torch.tensor(feats[rowidx, :, :20]))
@@ -111,28 +138,35 @@ class LitThreeDCorrectionDataModule(pl.LightningDataModule):
         GraphDataset()
     
     def setup(self, stage):
-        dataset = GraphDataset().shuffle()
+        dataset = GraphDataset()#.shuffle()
         length = len(dataset)
         
-        self.test_dataset = dataset[int(length * .9):]
-        self.val_dataset = dataset[int(length * .8):int(length * .9)]
-        self.train_dataset = dataset[:int(length * .8)]
+        # self.test_dataset = GraphDataset("test")
+        # self.val_dataset = GraphDataset("val")
+        # self.train_dataset = GraphDataset("train")
+        
+        # self.test_dataset = dataset[int(length * .9):]
+        # self.val_dataset = dataset[int(length * .8):int(length * .9)]
+        # self.train_dataset = dataset[:int(length * .8)]
+        self.train, self.val, self.test = torch.utils.data.random_split(
+            dataset,
+            [int(length * .8), int(length * .1), int(length * .1)])
     
     def train_dataloader(self):
         return pyg.loader.DataLoader(
-            self.train_dataset, 
+            self.train, 
             batch_size=self.batch_size, 
             shuffle=True, 
             num_workers=self.num_workers)
     
     def val_dataloader(self):
         return pyg.loader.DataLoader(
-            self.val_dataset, 
+            self.val, 
             batch_size=self.batch_size, 
             num_workers=self.num_workers)
     
     def test_dataloader(self):
         return pyg.loader.DataLoader(
-            self.test_dataset, 
+            self.test, 
             batch_size=self.batch_size, 
             num_workers=self.num_workers)

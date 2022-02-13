@@ -53,11 +53,11 @@ class BuildGraphsFlow(FlowSpec):
             self.params = json.load(stream)
             
         self.shard = np.arange(self.params['num_shards'])
-        self.next(self.slice_and_save, foreach="shard")
+        self.next(self.build_graphs, foreach="shard")
                   
                   
     @step
-    def slice_and_save(self):
+    def build_graphs(self):
         """
         1) Read the raw data.
         2) Feature engineer x and y.
@@ -71,41 +71,38 @@ class BuildGraphsFlow(FlowSpec):
         import torch_geometric as pyg
         
         # Read the raw data file and extract the desired features
-        filepath = osp.join(config.processed_data_path, f"feats-{self.params['timestep']}", "concat", f"{self.input}.npy")
+        main_dir = osp.join(config.processed_data_path, f"feats-{self.params['timestep']}")
         
-        data = np.memmap(
-            filepath, 
-            dtype=self.params['dtype'],
-            mode='r',
-            shape=tuple(self.params['shard_shape']))
-        
-        x = torch.tensor(data[..., :20])
-        y = torch.tensor(data[..., 20:])
+        def load(name):
+            return torch.tensor(
+                np.memmap(
+                    osp.join(main_dir, name, f"{self.input}.npy"), 
+                    dtype=self.params['dtype'], 
+                    mode='r', 
+                    shape=tuple(self.params[f'{name}_shape'])))
+                
+        x, y, edge = load("x"), load("y"), load("edge")
+        print(x.shape)
+        print(y.shape)
+        print(edge.shape)
         
         data_list = []
         
-        directed_index = np.array([[*range(1, 138)], [*range(137)]])
-        undirected_index = np.hstack((
-            directed_index, 
-            directed_index[[1, 0], :]
+        directed_idx = np.array([[*range(1, 138)], [*range(137)]])
+        undirected_idx = np.hstack((
+            directed_idx, 
+            directed_idx[[1, 0], :]
         ))
-        undirected_index = torch.tensor(undirected_index, dtype=torch.long)
-        for idx in range(len(data)):
+        undirected_idx = torch.tensor(undirected_idx, dtype=torch.long)
+        for idx in range(len(x)):
             x_ = torch.squeeze(x[idx, ...])
             y_ = torch.squeeze(y[idx, ...])
+            edge_ = torch.squeeze(edge[idx, ...])
 
-            # edge_attr = torch.squeeze(sca_inputs_[idx, ...])
-
-            data = pyg.data.Data(
-                x=x_,
-                # edge_attr=edge_attr,
-                edge_index=undirected_index,
-                y=y_,
-            )
+            data = pyg.data.Data(x=x_, edge_attr=edge_, edge_index=undirected_idx, y=y_,)
 
             data_list.append(data)
-        
-        # Save the bulk of graph in a separate file
+            
         out_path = osp.join(config.processed_data_path, f"data-{self.params['timestep']}.{self.input}.pt")
         torch.save(data_list, out_path)
         

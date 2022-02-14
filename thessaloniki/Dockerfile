@@ -111,16 +111,15 @@ RUN wget https://confluence.ecmwf.int/download/attachments/45757960/${ECCODES}.t
     && make \
     && ctest --rerun-failed --output-on-failure \
     && make install
-RUN export CC=mpicc 
-    && HDF5_MPI="ON" 
-    && pip install mpi4py
-    && pip install --no-binary=h5py h5py
+RUN export CC=mpicc \
+    && HDF5_MPI="ON" \
+    && pip install mpi4py \
+    && pip install --no-binary=h5py h5py \
 RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
 RUN pip install climetlab \
                 climetlab-maelstrom-nogwd \
                 climetlab-maelstrom-radiation \
                 dask \
-                h5py \
                 matplotlib \
                 metaflow \
                 memory_profiler \

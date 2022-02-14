@@ -30,25 +30,26 @@ import config
 
 def main():
     
+    step = 250
     h5_path = osp.join(config.processed_data_path, f'feats-{step}.h5')
 
     rank = MPI.COMM_WORLD.rank
 
-    for subidx in np.range(53):
+    for subidx in np.arange(53):
 
-        # start = rank * (2 ** 4 * (1 + subidx))
-        # end = start + 2 ** 4
-        start = rank * 53 * 2 ** 4 + subidx * 2 ** 4 
-        end = start + 2 ** 4
+        start = rank * 53 * 2 ** 4 + subidx * 4800
+        end = start + 4800
 
-        with h5py.File(h5_path, 'r', driver='mpio', comm=MPI.COMM_WORLD) as feats:
+        # with h5py.File(h5_path, 'r', driver='mpio', comm=MPI.COMM_WORLD) as feats:
+        with h5py.File(h5_path, 'r') as feats:
 
             sharded_path = osp.join(config.processed_data_path, f'feats-{step}.{rank}.{subidx}.h5')
-            with h5py.File(sharded_path, 'w', driver='mpio', comm=MPI.COMM_WORLD) as sharded:
+            # with h5py.File(sharded_path, 'w', driver='mpio', comm=MPI.COMM_WORLD) as sharded:
+            with h5py.File(sharded_path, 'w') as sharded:
 
-                f.create_dataset("x", data=feats['/x'][start:end])
-                f.create_dataset("y", data=feats['/y'][start:end])
-                f.create_dataset("edge", data=feats['/edge'][start:end])
+                sharded.create_dataset("/x", data=feats['/x'][start:end])
+                sharded.create_dataset("/y", data=feats['/y'][start:end])
+                sharded.create_dataset("/edge", data=feats['/edge'][start:end])
                 
                 
 if __name__ == "__main__":

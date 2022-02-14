@@ -1,1 +1,0 @@
-{"dtype": "float32", "timestep": 250, "dataset_len": 4070400, "num_shards": 848, "x_shape": [4800, 136, 17], "y_shape": [4800, 138, 1], "edge_shape": [4800, 137, 27]}

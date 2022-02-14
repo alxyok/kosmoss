@@ -39,42 +39,69 @@ from tqdm import tqdm
 import config
 from build_graphs import BuildGraphsFlow
 
-class GraphDataset(torch.utils.data.Dataset):
+# class GraphDataset(torch.utils.data.Dataset):
     
-    def __init__(self, mode="train"):
-        super().__init__()
+#     def __init__(self, mode="train"):
+#         super().__init__()
         
-        directed_index = np.array([[*range(1, 138)], [*range(137)]])
-        undirected_index = np.hstack((
-            directed_index, 
-            directed_index[[1, 0], :]
-        ))
-        self.undirected_index = torch.tensor(undirected_index, dtype=torch.long)
+#         directed_index = np.array([[*range(1, 138)], [*range(137)]])
+#         undirected_index = np.hstack((
+#             directed_index, 
+#             directed_index[[1, 0], :]
+#         ))
+#         self.undirected_index = torch.tensor(undirected_index, dtype=torch.long)
     
-    def raw_file_names(self):
-        return None
+#     def raw_file_names(self):
+#         return None
     
-    def processed_file_names(self):
-        return [f"data-{config.params['timestep']}.{k}.pt" 
-                for k in np.arange(config.params['num_shards'])]
+#     def processed_file_names(self):
+#         return [f"data-{config.params['timestep']}.{k}.pt" 
+#                 for k in np.arange(config.params['num_shards'])]
     
-    def download(self):
-        pass
+#     def download(self):
+#         pass
     
-    def process(self):
-        BuildGraphsFlow()
+#     def process(self):
+#         BuildGraphsFlow()
 
-class GraphDataset(pyg.data.Dataset):
+# class GraphDataset(pyg.data.Dataset):
+    
+#     def __init__(self, mode="train"):
+#         super().__init__()
+        
+#         directed_index = np.array([[*range(1, 138)], [*range(137)]])
+#         undirected_index = np.hstack((
+#             directed_index, 
+#             directed_index[[1, 0], :]
+#         ))
+#         self.undirected_index = torch.tensor(undirected_index, dtype=torch.long)
+    
+#     def __len__(self):
+#         return config.params['dataset_len']
+    
+#     def __getitem__(self, idx):
+#         fileidx = idx // config.params['num_shards']
+#         rowidx = idx % config.params['num_shards']
+        
+#         path = osp.join(config.processed_data_path, f"feats-{config.params['timestep']}", f'{fileidx}.npy')
+#         feats = np.memmap(
+#             path, 
+#             dtype = config.params['dtype'],
+#             mode='r',
+#             shape=config.params['shard_shape']
+#         )
+        
+#         x = torch.squeeze(torch.tensor(feats[rowidx, :, :20]))
+#         y = torch.squeeze(torch.tensor(feats[rowidx, :, 20:]))
+
+#         graph = pyg.data.Data(x=x, edge_index=self.undirected_index, y=y)
+        
+#         return graph
+
+class FlattenedDataset(pyg.data.Dataset):
     
     def __init__(self, mode="train"):
         super().__init__()
-        
-        directed_index = np.array([[*range(1, 138)], [*range(137)]])
-        undirected_index = np.hstack((
-            directed_index, 
-            directed_index[[1, 0], :]
-        ))
-        self.undirected_index = torch.tensor(undirected_index, dtype=torch.long)
     
     def __len__(self):
         return config.params['dataset_len']
@@ -83,7 +110,7 @@ class GraphDataset(pyg.data.Dataset):
         fileidx = idx // config.params['num_shards']
         rowidx = idx % config.params['num_shards']
         
-        path = osp.join(config.processed_data_path, f"feats-{config.params['timestep']}", f'{fileidx}.npy')
+        path = osp.join(config.processed_data_path, f"flattened-{config.params['timestep']}", f'{fileidx}.npy')
         feats = np.memmap(
             path, 
             dtype = config.params['dtype'],

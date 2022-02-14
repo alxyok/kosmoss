@@ -71,7 +71,7 @@ class BuildGraphsFlow(FlowSpec):
         import torch_geometric as pyg
         
         # Read the raw data file and extract the desired features
-        main_dir = osp.join(config.processed_data_path, f"feats-{self.params['timestep']}")
+        main_dir = osp.join(config.processed_data_path, f"features-{self.params['timestep']}")
         
         def load(name):
             return torch.tensor(
@@ -82,9 +82,6 @@ class BuildGraphsFlow(FlowSpec):
                     shape=tuple(self.params[f'{name}_shape'])))
                 
         x, y, edge = load("x"), load("y"), load("edge")
-        print(x.shape)
-        print(y.shape)
-        print(edge.shape)
         
         data_list = []
         
@@ -103,7 +100,10 @@ class BuildGraphsFlow(FlowSpec):
 
             data_list.append(data)
             
-        out_path = osp.join(config.processed_data_path, f"data-{self.params['timestep']}.{self.input}.pt")
+        out_path = osp.join(
+            config.processed_data_path, 
+            f"graphs-{self.params['timestep']}",
+            f"data-{self.params['timestep']}.{self.input}.pt")
         torch.save(data_list, out_path)
         
         self.next(self.join)

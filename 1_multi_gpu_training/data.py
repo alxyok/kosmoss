@@ -98,32 +98,82 @@ from build_graphs import BuildGraphsFlow
         
 #         return graph
 
-class FlattenedDataset(pyg.data.Dataset):
+class FlattenedDataset(torch.utils.data.Dataset):
     
     def __init__(self, mode="train"):
         super().__init__()
     
     def __len__(self):
-        return config.params['dataset_len']
+        return config.params['flattened']['dataset_len']
     
     def __getitem__(self, idx):
         fileidx = idx // config.params['num_shards']
         rowidx = idx % config.params['num_shards']
         
-        path = osp.join(config.processed_data_path, f"flattened-{config.params['timestep']}", f'{fileidx}.npy')
-        feats = np.memmap(
-            path, 
-            dtype = config.params['dtype'],
-            mode='r',
-            shape=config.params['shard_shape']
-        )
+        def load(name):
+            main_path = osp.join(config.processed_data_path, f"flattened-{config.params['timestep']}")
+            data = np.memmap(
+                osp.join(main_path, name, f'{fileidx}.npy'), 
+                dtype = config.params['dtype'],
+                mode='r',
+                shape=config.params['flattened'][f'{name}_shape']
+            )
+            tensor = torch.squeeze(torch.tensor(data[rowidx, ...]))
+            return tensor
         
-        x = torch.squeeze(torch.tensor(feats[rowidx, :, :20]))
-        y = torch.squeeze(torch.tensor(feats[rowidx, :, 20:]))
+        x = load('x')
+        y = load('y')
+        
+        return x, y
+    
 
-        graph = pyg.data.Data(x=x, edge_index=self.undirected_index, y=y)
+
+@DATAMODULE_REGISTRY
+class FlattenedDataModule(pl.LightningDataModule):
+    """Creates datasets for the """
+    
+    def __init__(self, 
+                 timestep: int,
+                 batch_size: int,
+                 num_workers: int):
         
-        return graph
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        super().__init__()
+        
+    def prepare_data(self):
+        pass
+    
+    def setup(self, stage: str):
+        dataset = FlattenedDataset()
+        length = len(dataset)
+        
+        self.train, self.val, self.test = torch.utils.data.random_split(
+            dataset,
+            [
+                int(length * .8), 
+                int(length * .1), 
+                int(length * .1)
+            ])
+    
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.train, 
+            batch_size=self.batch_size, 
+            shuffle=True, 
+            num_workers=self.num_workers)
+    
+    def val_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.val, 
+            batch_size=self.batch_size, 
+            num_workers=self.num_workers)
+    
+    def test_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.test, 
+            batch_size=self.batch_size, 
+            num_workers=self.num_workers)
 
 # class RawDataset(torch.utils.data.Dataset):
     
@@ -148,52 +198,52 @@ class FlattenedDataset(pyg.data.Dataset):
 #         return x, y
 
 
-@DATAMODULE_REGISTRY
-class LitThreeDCorrectionDataModule(pl.LightningDataModule):
-    """Creates datasets for the """
+# @DATAMODULE_REGISTRY
+# class LitThreeDCorrectionDataModule(pl.LightningDataModule):
+#     """Creates datasets for the """
     
-    def __init__(self, 
-                 timestep: int,
-                 batch_size: int,
-                 num_workers: int):
+#     def __init__(self, 
+#                  timestep: int,
+#                  batch_size: int,
+#                  num_workers: int):
         
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        super().__init__()
+#         self.batch_size = batch_size
+#         self.num_workers = num_workers
+#         super().__init__()
         
-    def prepare_data(self):
-        GraphDataset()
+#     def prepare_data(self):
+#         GraphDataset()
     
-    def setup(self, stage):
-        dataset = GraphDataset()#.shuffle()
-        length = len(dataset)
+#     def setup(self, stage):
+#         dataset = GraphDataset()#.shuffle()
+#         length = len(dataset)
         
-        # self.test_dataset = GraphDataset("test")
-        # self.val_dataset = GraphDataset("val")
-        # self.train_dataset = GraphDataset("train")
+#         # self.test_dataset = GraphDataset("test")
+#         # self.val_dataset = GraphDataset("val")
+#         # self.train_dataset = GraphDataset("train")
         
-        # self.test_dataset = dataset[int(length * .9):]
-        # self.val_dataset = dataset[int(length * .8):int(length * .9)]
-        # self.train_dataset = dataset[:int(length * .8)]
-        self.train, self.val, self.test = torch.utils.data.random_split(
-            dataset,
-            [int(length * .8), int(length * .1), int(length * .1)])
+#         # self.test_dataset = dataset[int(length * .9):]
+#         # self.val_dataset = dataset[int(length * .8):int(length * .9)]
+#         # self.train_dataset = dataset[:int(length * .8)]
+#         self.train, self.val, self.test = torch.utils.data.random_split(
+#             dataset,
+#             [int(length * .8), int(length * .1), int(length * .1)])
     
-    def train_dataloader(self):
-        return pyg.loader.DataLoader(
-            self.train, 
-            batch_size=self.batch_size, 
-            shuffle=True, 
-            num_workers=self.num_workers)
+#     def train_dataloader(self):
+#         return pyg.loader.DataLoader(
+#             self.train, 
+#             batch_size=self.batch_size, 
+#             shuffle=True, 
+#             num_workers=self.num_workers)
     
-    def val_dataloader(self):
-        return pyg.loader.DataLoader(
-            self.val, 
-            batch_size=self.batch_size, 
-            num_workers=self.num_workers)
+#     def val_dataloader(self):
+#         return pyg.loader.DataLoader(
+#             self.val, 
+#             batch_size=self.batch_size, 
+#             num_workers=self.num_workers)
     
-    def test_dataloader(self):
-        return pyg.loader.DataLoader(
-            self.test, 
-            batch_size=self.batch_size, 
-            num_workers=self.num_workers)
+#     def test_dataloader(self):
+#         return pyg.loader.DataLoader(
+#             self.test, 
+#             batch_size=self.batch_size, 
+#             num_workers=self.num_workers)

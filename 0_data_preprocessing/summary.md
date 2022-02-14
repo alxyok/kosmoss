@@ -1,4 +1,6 @@
 The plan: The bootcamp is based on real-world data used in a project with ECMWF.
+
+Downloading and conditioning data
 * Understanding the UC. Explore the data, print plots
 * Download a sample of the data
 * Store the data into multiple shards

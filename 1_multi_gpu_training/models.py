@@ -87,25 +87,45 @@ class ThreeDCorrectionModule(pl.LightningModule):
 
 
 @MODEL_REGISTRY
-class LitGAT(ThreeDCorrectionModule):
+class LitMLP(ThreeDCorrectionModule):
     
-    def __init__(self,
-                 in_channels,
-                 hidden_channels,
-                 out_channels,
-                 num_layers,
-                 dropout,
-                 heads,
-                 jk,
-                 lr):
+    class Normalize(nn.Module):
+        
+        def __init__(self):
+            super().__init__()
+            self.epsilon = torch.tensor(1.e-8)
+            
+            stats = torch.load(os.path.join(config.data_path, f"stats-{config.params['timestep']}.pt"))
+            
+            self.x_mean = stats["x_mean"]
+            self.y_mean = stats["y_mean"]
+            
+            self.x_std = stats["x_std"]
+            self.y_std = stats["y_std"]
+            
+        def forward(self, x: torch.Tensor):
+
+            x = (x - x_mean) / (x_std + self.epsilon)
+            y = (batch.y.reshape((batch_size, -1, num_output_features)) - y_mean) / (y_std + self.epsilon)
+
+            x = x.reshape(-1, batch.num_features)
+            y = y.reshape(-1, num_output_features)
+    
+    def __init__(self, 
+                 in_channels: int, 
+                 hidden_channels: int, 
+                 out_channels: int, 
+                 lr: float):
         super().__init__()
         
         self.lr = lr
-        self.net = pyg.nn.GAT(in_channels=in_channels, 
-                              hidden_channels=hidden_channels,
-                              out_channels=out_channels,
-                              num_layers=num_layers,
-                              dropout=dropout,
-                              act=nn.SiLU(inplace=True),
-                              heads=heads,
-                              jk=jk)
+        self.net = nn.Sequential(
+            Normalize(),
+            nn.Linear(in_channels, hidden_channels),
+            nn.SiLU(),
+            nn.Linear(hidden_channels, hidden_channels),
+            nn.SiLU(),
+            nn.Linear(hidden_channels, hidden_channels),
+            nn.SiLU(),
+            nn.Linear(hidden_channels, out_channels),
+        )

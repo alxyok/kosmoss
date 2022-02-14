@@ -34,53 +34,26 @@ import config
 
 class ThreeDCorrectionModule(pl.LightningModule):
 
-    def forward(self, x, edge_index):
-        return self.net(x, edge_index)
-        
-    def _normalize(self, batch, batch_size):
-        stats = torch.load(os.path.join(config.data_path, f"stats-{config.params['timestep']}.pt"))
-        device = self.device
-        x_mean = stats["x_mean"].to(device)
-        y_mean = stats["y_mean"].to(device)
-        x_std = stats["x_std"].to(device)
-        y_std = stats["y_std"].to(device)
-        
-        num_output_features = batch.y.size()[-1]
-        
-        x = (batch.x.reshape((batch_size, -1, batch.num_features)) - x_mean) / (x_std + torch.tensor(1.e-8))
-        y = (batch.y.reshape((batch_size, -1, num_output_features)) - y_mean) / (y_std + torch.tensor(1.e-8))
-        
-        x = x.reshape(-1, batch.num_features)
-        y = y.reshape(-1, num_output_features)
-        
-        return x, batch.y, batch.edge_index
+    def forward(self, x: torch.Tensor):
+        return self.net(x)
     
-    def _common_step(self, batch, batch_idx, stage, normalize=False):
-        batch_size = batch.ptr.size()[0]-1
-        
-        if normalize:
-            x, y, edge_index = self._normalize(batch, batch_size)
-        else:
-            x, y, edge_index = batch.x, batch.y, batch.edge_index
-        
+    def _common_step(self, batch, batch_idx, stage):
+        x, y = batch
         y_hat = self(x, edge_index)
         loss = F.mean_squared_error(y_hat, y)
-        r2 = F.r2_score(y_hat, y)
-
-        self.log(f"{stage}_loss", loss, prog_bar=True, on_step=True, batch_size=batch_size)
-        self.log(f"{stage}_r2", r2,  prog_bar=True, on_step=True, batch_size=batch_size)
+        self.log(f"{stage}_loss", loss, prog_bar=True, on_step=True, batch_size=len(batch))
         
-        return y_hat, loss, r2
-
+        return y_hat, loss
+    
     def training_step(self, batch, batch_idx):
-        _, loss, _ = self._common_step(batch, batch_idx, "train")
+        _, loss = self._common_step(batch, batch_idx, "train")
         return loss
 
     def validation_step(self, batch, batch_idx):
-        y_hat, _, _ = self._common_step(batch, batch_idx, "val")
+        y_hat, _ = self._common_step(batch, batch_idx, "val")
 
     def test_step(self, batch, batch_idx):
-        y_hat, _, _ = self._common_step(batch, batch_idx, "test")
+        y_hat, _ = self._common_step(batch, batch_idx, "test")
     
     def configure_optimizers(self):
         return optim.AdamP(self.parameters(), lr=self.lr)
@@ -98,18 +71,11 @@ class LitMLP(ThreeDCorrectionModule):
             stats = torch.load(os.path.join(config.data_path, f"stats-{config.params['timestep']}.pt"))
             
             self.x_mean = stats["x_mean"]
-            self.y_mean = stats["y_mean"]
-            
             self.x_std = stats["x_std"]
-            self.y_std = stats["y_std"]
             
         def forward(self, x: torch.Tensor):
 
-            x = (x - x_mean) / (x_std + self.epsilon)
-            y = (batch.y.reshape((batch_size, -1, num_output_features)) - y_mean) / (y_std + self.epsilon)
-
-            x = x.reshape(-1, batch.num_features)
-            y = y.reshape(-1, num_output_features)
+            return (x - self.x_mean) / (self.x_std + self.epsilon)
     
     def __init__(self, 
                  in_channels: int, 
@@ -120,7 +86,7 @@ class LitMLP(ThreeDCorrectionModule):
         
         self.lr = lr
         self.net = nn.Sequential(
-            Normalize(),
+            self.Normalize(),
             nn.Linear(in_channels, hidden_channels),
             nn.SiLU(),
             nn.Linear(hidden_channels, hidden_channels),

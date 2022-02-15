@@ -28,9 +28,7 @@ import randomname
 import sys
 import yaml
 
-root_path = osp.join(osp.dirname(os.path.realpath(__file__)), '..')
-
-sys.path.append(osp.join(root_path))
+root_path = osp.join(osp.dirname(os.path.realpath(__file__)))
 
 data_path = osp.join(root_path, 'data')
 cache_data_path = osp.join(data_path, 'cache')
@@ -49,9 +47,11 @@ for path in _paths:
 logger = logging.getLogger("")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
+# Export initial config parameters for access in all modules
 with open(osp.join(root_path, "config.yaml"), "r") as stream:
     config = yaml.safe_load(stream)
 
+# Export artifacts params for all training modules
 params_path = osp.join(root_path, "params.json")
 if osp.isfile(params_path):
     with open(params_path, "r") as stream:

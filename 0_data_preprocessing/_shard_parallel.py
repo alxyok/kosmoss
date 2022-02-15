@@ -24,19 +24,24 @@ import h5py
 from mpi4py import MPI
 import numpy as np
 import os.path as osp
+import sys
 
-import config
 
-
-def main():
+def main() -> None:
     
+    sys.path.append(osp.abspath('..'))
+    
+    import config
+
     step = 250
-    h5_path = osp.join(config.processed_data_path, f'feats-{step}.h5')
+    h5_path = osp.join(config.processed_data_path, f'features-{step}.h5')
 
     rank = MPI.COMM_WORLD.rank
+    print(f'worker of rank {rank} started.')
 
     for subidx in np.arange(53):
-
+        
+        print(f'processing slice {subidx} for rank {rank}.')
         start = rank * 53 * 2 ** 4 + subidx * 4800
         end = start + 4800
 
@@ -49,7 +54,9 @@ def main():
                 sharded.create_dataset("/y", data=feats['/y'][start:end])
                 sharded.create_dataset("/edge", data=feats['/edge'][start:end])
                 
-                
+    print(f'ending session for worker of rank {rank}.')
+    
+    
 if __name__ == "__main__":
     
     main()

@@ -1,8 +1,9 @@
 # User-defined
-.metaflow
+**/.metaflow
 **/_
-**/data
-**/experiments
+artifacts/**
+data/**
+logs/**
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

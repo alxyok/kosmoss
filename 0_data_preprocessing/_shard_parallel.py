@@ -40,11 +40,9 @@ def main():
         start = rank * 53 * 2 ** 4 + subidx * 4800
         end = start + 4800
 
-        # with h5py.File(h5_path, 'r', driver='mpio', comm=MPI.COMM_WORLD) as feats:
         with h5py.File(h5_path, 'r') as feats:
 
             sharded_path = osp.join(config.processed_data_path, f'feats-{step}.{rank}.{subidx}.h5')
-            # with h5py.File(sharded_path, 'w', driver='mpio', comm=MPI.COMM_WORLD) as sharded:
             with h5py.File(sharded_path, 'w') as sharded:
 
                 sharded.create_dataset("/x", data=feats['/x'][start:end])

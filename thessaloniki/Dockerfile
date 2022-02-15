@@ -58,7 +58,6 @@ RUN apt install -y build-essential \
                    curl \
                    sudo \
                    vim \
-                   zsh \
     && apt clean all \
     && rm -rf /var/cache/apt/*
 
@@ -114,7 +113,7 @@ RUN wget https://confluence.ecmwf.int/download/attachments/45757960/${ECCODES}.t
 RUN export CC=mpicc \
     && HDF5_MPI="ON" \
     && pip install mpi4py \
-    && pip install --no-binary=h5py h5py \
+    && pip install --no-binary=h5py h5py
 RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
 RUN pip install climetlab \
                 climetlab-maelstrom-nogwd \

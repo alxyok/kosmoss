@@ -30,6 +30,8 @@ import yaml
 
 root_path = osp.join(osp.dirname(os.path.realpath(__file__)), '..')
 
+sys.path.append(osp.join(root_path))
+
 data_path = osp.join(root_path, 'data')
 cache_data_path = osp.join(data_path, 'cache')
 raw_data_path = osp.join(data_path, 'raw')
@@ -50,5 +52,7 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 with open(osp.join(root_path, "config.yaml"), "r") as stream:
     config = yaml.safe_load(stream)
 
-with open(osp.join(root_path, "params.json"), "r") as stream:
-    params = json.load(stream)
+params_path = osp.join(root_path, "params.json")
+if osp.isfile(params_path):
+    with open(params_path, "r") as stream:
+        params = json.load(stream)

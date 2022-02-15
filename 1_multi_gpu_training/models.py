@@ -68,7 +68,8 @@ class LitMLP(ThreeDCorrectionModule):
             super().__init__()
             self.epsilon = torch.tensor(1.e-8)
             
-            stats = torch.load(os.path.join(config.data_path, f"stats-{config.params['timestep']}.pt"))
+            step = config.config['timestep']
+            stats = torch.load(os.path.join(config.data_path, f"stats-{step}.pt"))
             
             self.x_mean = stats["x_mean"]
             self.x_std = stats["x_std"]

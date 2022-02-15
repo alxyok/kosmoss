@@ -103,3 +103,19 @@ def purgedirs(paths: Union[str, list]) -> Union[str, list]:
         return paths[0]
     
     return paths
+
+
+
+def makedirs(paths: Union[str, list]) -> Union[str, list]:
+    
+    if isinstance(paths, str):
+        paths = [paths]
+
+    for p in paths:
+        os.makedirs(p, exist_ok=True)
+    
+    if len(paths) == 1:
+        return paths[0]
+    
+    return paths
+

@@ -28,21 +28,18 @@ import randomname
 import sys
 import yaml
 
+import utils
+
 root_path = osp.join(osp.dirname(os.path.realpath(__file__)))
 
-data_path = osp.join(root_path, 'data')
-cache_data_path = osp.join(data_path, 'cache')
-raw_data_path = osp.join(data_path, 'raw')
-processed_data_path = osp.join(data_path, 'processed')
-
-_paths = [
-    data_path,
-    cache_data_path,
-    raw_data_path,
-    processed_data_path,
-]
-for path in _paths:
-    os.makedirs(path, exist_ok=True)
+data_path, cache_data_path, raw_data_path, processed_data_path, artifacts_path, logs_path = utils.makedirs([
+    osp.join(root_path, 'data'),
+    osp.join(root_path, 'data', 'cache'),
+    osp.join(root_path, 'data', 'raw'),
+    osp.join(root_path, 'data', 'processed'),
+    osp.join(root_path, 'artifacts'),
+    osp.join(root_path, 'logs'),
+])
     
 logger = logging.getLogger("")
 logger.addHandler(logging.StreamHandler(sys.stdout))

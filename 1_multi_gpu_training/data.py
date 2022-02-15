@@ -100,18 +100,21 @@ from build_graphs import BuildGraphsFlow
 
 class FlattenedDataset(torch.utils.data.Dataset):
     
-    def __init__(self, mode="train"):
+    def __init__(self, step):
         super().__init__()
+        self.step = step
     
     def __len__(self):
-        return config.params['flattened']['dataset_len']
+        
+        return config.params[str(step)]['flattened']['dataset_len']
     
     def __getitem__(self, idx):
+        
         fileidx = idx // config.params['num_shards']
         rowidx = idx % config.params['num_shards']
         
         def load(name):
-            main_path = osp.join(config.processed_data_path, f"flattened-{config.params['timestep']}")
+            main_path = osp.join(config.processed_data_path, f"flattened-{self.timestep}")
             data = np.memmap(
                 osp.join(main_path, name, f'{fileidx}.npy'), 
                 dtype = config.params['dtype'],
@@ -133,19 +136,19 @@ class FlattenedDataModule(pl.LightningDataModule):
     """Creates datasets for the """
     
     def __init__(self, 
-                 timestep: int,
                  batch_size: int,
                  num_workers: int):
         
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.timestep = config.config['timestep']
         super().__init__()
         
     def prepare_data(self):
         pass
     
     def setup(self, stage: str):
-        dataset = FlattenedDataset()
+        dataset = FlattenedDataset(self.timestep)
         length = len(dataset)
         
         self.train, self.val, self.test = torch.utils.data.random_split(

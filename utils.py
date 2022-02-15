@@ -23,6 +23,7 @@
 import json
 import os
 import os.path as osp
+import shutil
 import time
 from typing import Callable, List, Union
 
@@ -45,6 +46,7 @@ def prime_factors(n: int) -> List[int]:
         factors.append(n)
         
     return factors
+
 
 
 def save_params(
@@ -82,3 +84,22 @@ def timing(fn: Callable) -> Callable:
         return result
     
     return wrap
+
+
+
+def purgedirs(paths: Union[str, list]) -> Union[str, list]:
+    
+    if isinstance(paths, str):
+        paths = [paths]
+    
+    for p in paths: 
+        if osp.isdir(p):
+            print(p)
+            shutil.rmtree(p)
+
+        os.makedirs(p, exist_ok=True)
+    
+    if len(paths) == 1:
+        return paths[0]
+    
+    return paths

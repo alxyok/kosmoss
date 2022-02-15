@@ -47,7 +47,9 @@ def main() -> None:
 
         with h5py.File(h5_path, 'r') as feats:
 
-            sharded_path = osp.join(config.processed_data_path, f'feats-{step}.{rank}.{subidx}.h5')
+            sharded_path = osp.join(
+                config.processed_data_path, 
+                f'feats-{step}.{rank}.{subidx}.h5')
             with h5py.File(sharded_path, 'w') as sharded:
 
                 sharded.create_dataset("/x", data=feats['/x'][start:end])

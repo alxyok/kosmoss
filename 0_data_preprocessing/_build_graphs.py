@@ -23,19 +23,10 @@
 from metaflow import FlowSpec, Parameter, step
 import os
 import os.path as osp
-import time
-
-import config
+import sys
 
 
 class BuildGraphsFlow(FlowSpec):
-    
-    
-    # myfile = IncludeFile(
-    #     'myfile',
-    #     is_text=False,
-    #     help='My input',
-    #     default='/Users/bob/myinput.bin')
         
     @step
     def start(self):
@@ -44,13 +35,11 @@ class BuildGraphsFlow(FlowSpec):
         """
         
         import numpy as np
-        import json
+        import yaml
         
-        # Split the Flow and do slice_and_save for each subset
-        self.shards_path = osp.join(config.processed_data_path, f'feats-{step}', 'concat')
-        
-        with open(osp.join(config.root_path, "params.json"), "r") as stream:
-            self.params = json.load(stream)
+        self.timestep = config.config['timestep']
+        self.params = config.params[str(self.timestep)]['features']
+        self.out_dir = utils.purgedirs(osp.join(config.processed_data_path, f"graphs-{self.timestep}"))
             
         self.shard = np.arange(self.params['num_shards'])
         self.next(self.build_graphs, foreach="shard")
@@ -69,11 +58,12 @@ class BuildGraphsFlow(FlowSpec):
         import torch
         import torch.nn.functional as F
         import torch_geometric as pyg
+        from typing import Union
         
         # Read the raw data file and extract the desired features
-        main_dir = osp.join(config.processed_data_path, f"features-{self.params['timestep']}")
+        main_dir = osp.join(config.processed_data_path, f"features-{self.timestep}")
         
-        def load(name):
+        def load(name: Union['x', 'y', 'edge']) -> torch.Tensor:
             return torch.tensor(
                 np.memmap(
                     osp.join(main_dir, name, f"{self.input}.npy"), 
@@ -100,10 +90,7 @@ class BuildGraphsFlow(FlowSpec):
 
             data_list.append(data)
             
-        out_path = osp.join(
-            config.processed_data_path, 
-            f"graphs-{self.params['timestep']}",
-            f"data-{self.params['timestep']}.{self.input}.pt")
+        out_path = osp.join(self.out_dir, f"data-{self.timestep}.{self.input}.pt")
         torch.save(data_list, out_path)
         
         self.next(self.join)
@@ -130,5 +117,10 @@ class BuildGraphsFlow(FlowSpec):
     
 
 if __name__ == '__main__':
+
+    sys.path.append(osp.abspath('..'))
+    
+    import config
+    import utils
     
     BuildGraphsFlow()

@@ -27,9 +27,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities.cli import DATAMODULE_REGISTRY
 import sys
 import torch
-import torch.nn.functional as F
 import torch_geometric as pyg
-import torch_optimizer as optim
 
 sys.path.append(osp.abspath('..'))
 
@@ -64,7 +62,7 @@ class ThreeDCorrectionDataset(pyg.data.InMemoryDataset):
         
     def process(self) -> None:
         
-        ßimport flows
+        import dataproc.flows as flows
         flows.BuildGraphsFlow()
 
 

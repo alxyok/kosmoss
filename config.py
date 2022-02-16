@@ -21,16 +21,13 @@
 # SOFTWARE.
 
 import json
-import os
 import os.path as osp
-import logging
-import randomname
 import sys
 import yaml
 
 import utils
 
-root_path = osp.join(osp.dirname(os.path.realpath(__file__)))
+root_path = osp.join(osp.dirname(osp.realpath(__file__)))
 
 data_path, cache_data_path, raw_data_path, processed_data_path, artifacts_path, logs_path = utils.makedirs([
     osp.join(root_path, '_data'),

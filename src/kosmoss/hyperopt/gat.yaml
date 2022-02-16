@@ -20,21 +20,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import setuptools
+fit:
+    model:
+        class_path: km.hyperopt.models.LitGAT
+        init_args:
+            in_channels: 20
+            hidden_channels: 8
+            out_channels: 4
+            num_layers: 4
+            dropout: .3
+            heads: 8
+            jk: "last"
+            lr: .0001
+            timestep: 1000
+            norm: True
 
-with open("README.md", "r", encoding="utf-8") as readme:
-    long_description = readme.read()
-
-setuptools.setup(
-    name="kosmoss",
-    version="0.0.1",
-    author="alxyok",
-    author_email="alxyok@naiama.com",
-    description="Bootcamps",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
-    include_package_data=True,
-    python_requires=">=3.8",
-)
+    data:
+        class_path: km.hyperopt.data.LitThreeDCorrectionDataModule
+        init_args:
+            timestep: 1000
+            batch_size: 256
+            num_workers: 0
+    
+    trainer:
+        max_epochs: 1
+        accelerator: "gpu"
+        devices: -1

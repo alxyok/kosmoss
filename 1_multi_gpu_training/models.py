@@ -34,6 +34,12 @@ sys.path.append(osp.abspath('..'))
 import config
 
 class ThreeDCorrectionModule(pl.LightningModule):
+    
+    def __init__(self):
+        super().__init__()
+        
+        # 'The LightningModule knows what device it is on. You can access the reference via self.device. Sometimes it is necessary to store tensors as module attributes. However, if they are not parameters they will remain on the CPU even if the module gets moved to a new device. To prevent that and remain device agnostic, register the tensor as a buffer in your modules’s __init__ method with register_buffer().'
+        self.register_buffer("epsilon", torch.tensor(1.e-8))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x)
@@ -83,31 +89,31 @@ class ThreeDCorrectionModule(pl.LightningModule):
         return optim.AdamP(self.parameters(), lr=self.lr)
     
     
+    
 class LitMLP(ThreeDCorrectionModule):
+
     
     class Normalize(nn.Module):
-        
-        def __init__(self, module_instance) -> None:
-            
+
+        def __init__(self, epsilon: torch.Tensor) -> None:
+
             super().__init__()
-            
-            # 'The LightningModule knows what device it is on. You can access the reference via self.device. Sometimes it is necessary to store tensors as module attributes. However, if they are not parameters they will remain on the CPU even if the module gets moved to a new device. To prevent that and remain device agnostic, register the tensor as a buffer in your modules’s __init__ method with register_buffer().'
-            self._module = module_instance
-            self._module.register_buffer("epsilon", torch.tensor(1.e-8))
-            
+
+            self.epsilon = epsilon
+
             step = config.config['timestep']
             stats = torch.load(osp.join(config.data_path, f"stats-flattened-{step}.pt"))
-            
+
             self.x_mean = stats["x_mean"]
             self.x_std = stats["x_std"]
-            
+
         def forward(self, x: torch.Tensor) -> torch.Tensor:
-            
+
             # Adjusting the tensors to scale to other devices. 'When you need to create a new tensor, use type_as. This will make your code scale to any arbitrary number of GPUs or TPUs with Lightning.'
             mean = self.x_mean.type_as(x)
             std = self.x_std.type_as(x)
 
-            return (x - mean) / (std + self._module.epsilon)
+            return (x - mean) / (std + self.epsilon)
     
     
     def __init__(self, 
@@ -119,9 +125,10 @@ class LitMLP(ThreeDCorrectionModule):
         super().__init__()
         
         self.lr = lr
+        self.normalization_layer = LitMLP.Normalize(self.epsilon)
         
         self.net = nn.Sequential(
-            LitMLP.Normalize(self),
+            self.normalization_layer,
             nn.Linear(in_channels, hidden_channels),
             nn.SiLU(),
             nn.Linear(hidden_channels, hidden_channels),

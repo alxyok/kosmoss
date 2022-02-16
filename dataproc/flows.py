@@ -48,10 +48,9 @@ class BuildGraphsFlow(FlowSpec):
     @step
     def build_graphs(self):
         """
-        1) Read the raw data.
-        2) Feature engineer x and y.
-        3) Compute and save normalization factors for later use.
-        3) Sequentially iterate the sharded subset to create and save the graph for each row.
+        1) Load the raw data.
+        2) Extract features for x and y.
+        3) Sequentially iterate the sharded subset sample to create and save the graph for each row.
         """
         
         import numpy as np
@@ -60,15 +59,14 @@ class BuildGraphsFlow(FlowSpec):
         import torch_geometric as pyg
         from typing import Union
         
-        # Read the raw data file and extract the desired features
         main_dir = osp.join(config.processed_data_path, f"features-{self.timestep}")
         
         def load(name: Union['x', 'y', 'edge']) -> torch.Tensor:
             return torch.tensor(
-                np.memmap(
-                    osp.join(main_dir, name, f"{self.input}.npy"), 
-                    dtype=self.params['dtype'], 
+                np.lib.format.open_memmap(
                     mode='r', 
+                    dtype=self.params['dtype'], 
+                    filename=osp.join(main_dir, name, f"{self.input}.npy"), 
                     shape=tuple(self.params[f'{name}_shape'])))
                 
         x, y, edge = load("x"), load("y"), load("edge")
@@ -87,7 +85,6 @@ class BuildGraphsFlow(FlowSpec):
             edge_ = torch.squeeze(edge[idx, ...])
 
             data = pyg.data.Data(x=x_, edge_attr=edge_, edge_index=undirected_idx, y=y_,)
-
             data_list.append(data)
             
         out_path = osp.join(self.out_dir, f"data-{self.timestep}.{self.input}.pt")
@@ -99,7 +96,7 @@ class BuildGraphsFlow(FlowSpec):
     @step
     def join(self, inputs):
         """
-        Join the parallel branches. Compile results, print execution time.
+        Join the parallel branches.
         """
         
         self.next(self.end)

@@ -94,7 +94,6 @@ def purgedirs(paths: Union[str, list]) -> Union[str, list]:
     
     for p in paths: 
         if osp.isdir(p):
-            print(p)
             shutil.rmtree(p)
 
         os.makedirs(p, exist_ok=True)

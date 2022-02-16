@@ -33,9 +33,12 @@ import config
 
 class FlattenedDataset(torch.utils.data.Dataset):
     
-    def __init__(self, step: int) -> None:
+    def __init__(self, 
+                 step: int, 
+                 mode: Union['efficient', 'controlled'] = 'controlled') -> None:
         super().__init__()
         self.step = step
+        self.mode = mode
         self.params = config.params[str(self.step)]['flattened']
     
     def __len__(self) -> int:
@@ -50,13 +53,18 @@ class FlattenedDataset(torch.utils.data.Dataset):
         
         def _load(name: Union['x', 'y']) -> Tuple[torch.Tensor]:
             main_path = osp.join(config.processed_data_path, f"flattened-{self.step}")
-            # data = np.memmap(
-            #     osp.join(main_path, name, f'{fileidx}.npy'), 
-            #     dtype = self.params['dtype'],
-            #     mode='r',
-            #     shape=self.params[f'{name}_shape']
-            # )
-            data = np.load(osp.join(main_path, name, f'{fileidx}.npy'))
+            
+            if self.mode == 'efficient':
+                data = np.lib.format.open_memmap(
+                    mode='r',
+                    dtype = self.params['dtype'],
+                    filename=osp.join(main_path, name, f'{fileidx}.npy'), 
+                    shape=tuple(self.params[f'{name}_shape']) 
+                )
+                
+            else:
+                data = np.load(osp.join(main_path, name, f'{fileidx}.npy'))
+                
             tensor = torch.squeeze(torch.tensor(data[rowidx, ...]))
             return tensor
         
@@ -74,6 +82,7 @@ class FlattenedDataModule(pl.LightningDataModule):
         
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.loading_mode = config.config['loading_mode']
         self.timestep = config.config['timestep']
         super().__init__()
         
@@ -81,7 +90,7 @@ class FlattenedDataModule(pl.LightningDataModule):
         pass
     
     def setup(self, stage: str) -> None:
-        dataset = FlattenedDataset(self.timestep)
+        dataset = FlattenedDataset(self.timestep, mode=self.loading_mode)
         length = len(dataset)
         
         self.train, self.val, self.test = torch.utils.data.random_split(

@@ -112,6 +112,7 @@ class LitMLP(ThreeDCorrectionModule):
             # Adjusting the tensors to scale to other devices. 'When you need to create a new tensor, use type_as. This will make your code scale to any arbitrary number of GPUs or TPUs with Lightning.'
             mean = self.x_mean.type_as(x)
             std = self.x_std.type_as(x)
+            epsilon = torch.tensor(1.e-8).type_as(x)
 
             return (x - mean) / (std + self.epsilon)
     
@@ -129,6 +130,7 @@ class LitMLP(ThreeDCorrectionModule):
         
         self.net = nn.Sequential(
             self.normalization_layer,
+            # self.feature_engineering_layer,
             nn.Linear(in_channels, hidden_channels),
             nn.SiLU(),
             nn.Linear(hidden_channels, hidden_channels),

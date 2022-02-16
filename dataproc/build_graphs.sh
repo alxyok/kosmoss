@@ -1,3 +1,4 @@
+#!/usr/bin/bash 
 # MIT License
 # 
 # Copyright (c) 2022 alxyok
@@ -20,36 +21,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import json
-import os
-import os.path as osp
-import logging
-import randomname
-import sys
-import yaml
+export MAX_WORKERS=$(python -c "import psutil; print(psutil.cpu_count(logical=False))")
 
-import utils
-
-root_path = osp.join(osp.dirname(os.path.realpath(__file__)))
-
-data_path, cache_data_path, raw_data_path, processed_data_path, artifacts_path, logs_path = utils.makedirs([
-    osp.join(root_path, '_data'),
-    osp.join(root_path, '_data', 'cache'),
-    osp.join(root_path, '_data', 'raw'),
-    osp.join(root_path, '_data', 'processed'),
-    osp.join(root_path, '_artifacts'),
-    osp.join(root_path, '_logs'),
-])
-    
-logger = logging.getLogger("")
-logger.addHandler(logging.StreamHandler(sys.stdout))
-
-# Export initial config parameters for access in all modules
-with open(osp.join(root_path, "config.yaml"), "r") as stream:
-    config = yaml.safe_load(stream)
-
-# Export artifacts params for all training modules
-params_path = osp.join(root_path, "params.json")
-if osp.isfile(params_path):
-    with open(params_path, "r") as stream:
-        params = json.load(stream)
+USERNAME='mluser' python ../flows.py \
+    run \
+        --max-num-splits 6000 \
+        --max-workers ${MAX_WORKERS} >> ../logs/graph_build.stdout

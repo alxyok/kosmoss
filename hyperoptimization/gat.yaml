@@ -20,36 +20,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import json
-import os
-import os.path as osp
-import logging
-import randomname
-import sys
-import yaml
+fit:
+    model:
+        class_path: models.LitGAT
+        init_args:
+            in_channels: 20
+            hidden_channels: 8
+            out_channels: 4
+            num_layers: 4
+            dropout: .3
+            heads: 8
+            jk: "last"
+            lr: .0001
+            timestep: 1000
+            norm: True
 
-import utils
-
-root_path = osp.join(osp.dirname(os.path.realpath(__file__)))
-
-data_path, cache_data_path, raw_data_path, processed_data_path, artifacts_path, logs_path = utils.makedirs([
-    osp.join(root_path, '_data'),
-    osp.join(root_path, '_data', 'cache'),
-    osp.join(root_path, '_data', 'raw'),
-    osp.join(root_path, '_data', 'processed'),
-    osp.join(root_path, '_artifacts'),
-    osp.join(root_path, '_logs'),
-])
+    data:
+        class_path: data.LitThreeDCorrectionDataModule
+        init_args:
+            timestep: 1000
+            batch_size: 256
+            num_workers: 0
     
-logger = logging.getLogger("")
-logger.addHandler(logging.StreamHandler(sys.stdout))
-
-# Export initial config parameters for access in all modules
-with open(osp.join(root_path, "config.yaml"), "r") as stream:
-    config = yaml.safe_load(stream)
-
-# Export artifacts params for all training modules
-params_path = osp.join(root_path, "params.json")
-if osp.isfile(params_path):
-    with open(params_path, "r") as stream:
-        params = json.load(stream)
+    trainer:
+        max_epochs: 1
+        accelerator: "gpu"
+        devices: -1

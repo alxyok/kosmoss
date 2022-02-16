@@ -1,4 +1,4 @@
-# bootcamps
+# kosmos
 
 This bootcamp was designed as. it contains assets
 This material is an introduction to scaling

@@ -1,12 +1,12 @@
 # User-defined
 **/.metaflow
 **/_
-_artifacts/*
-_!artifacts/__init__.py
-_data/*
-!_data/__init__.py
-_logs/*
-!_logs/__init__.py
+**/_artifacts/*
+!**/artifacts/__init__.py
+**/_data/*
+!**/_data/__init__.py
+**/_logs/*
+!**/_logs/__init__.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,4 +1,4 @@
-Most Data Scientists get excited for the modeling part, but most of the work actually is in the data processing realm. This part is tragically fundamental in this respect.
+Most Data Scientists get excited for the modeling part, but most of the effort belongs in the data processing realm. This part is tragically fundamental in this respect.
 
 The plan: The bootcamp is based on real-world data used in a project with ECMWF.
 

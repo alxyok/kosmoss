@@ -2,16 +2,16 @@ import numpy as np
 import os.path as osp
 from pytorch_lightning import LightningDataModule
 from pytorch_lightning.utilities.cli import DATAMODULE_REGISTRY
-import sys
 import torch
 import torch_geometric as pyg
 from torch_geometric.data import InMemoryDataset
+from typing import List
 
 from kosmoss import CONFIG, DATA_PATH, PARAMS
 from kosmoss.dataproc.flows import BuildGraphsFlow
 
 
-class ThreeDCorrectionDataset(InMemoryDataset):
+class GNNDataset(InMemoryDataset):
     
     def __init__(self, root: str) -> None:
         
@@ -40,15 +40,12 @@ class ThreeDCorrectionDataset(InMemoryDataset):
         BuildGraphsFlow()
 
 
-@DATAMODULE_REGISTRY
-class LitThreeDCorrectionDataModule(LightningDataModule):
+# @DATAMODULE_REGISTRY
+class LitGNNDataModule(LightningDataModule):
     
-    def __init__(self, 
-                 batch_size: int,
-                 num_workers: int) -> None:
+    def __init__(self, batch_size: int) -> None:
         
         self.batch_size = batch_size
-        self.num_workers = num_workers
         super().__init__()
         
         
@@ -57,7 +54,7 @@ class LitThreeDCorrectionDataModule(LightningDataModule):
     
     
     def setup(self, stage: str) -> None:
-        dataset = ThreeDCorrectionDataset(DATA_PATH).shuffle()
+        dataset = GNNDataset(DATA_PATH).shuffle()
         length = len(dataset)
         
         self.test_dataset = dataset[1000000:]
@@ -65,26 +62,23 @@ class LitThreeDCorrectionDataModule(LightningDataModule):
         self.train_dataset = dataset[:900000]
     
     
-    def train_dataloader(self) -> torch.data.loader.DataLoader:
+    def train_dataloader(self) -> torch.utils.data.DataLoader:
         
         return pyg.loader.DataLoader(
             self.train_dataset, 
             batch_size=self.batch_size, 
-            shuffle=True, 
-            num_workers=self.num_workers)
+            shuffle=True)
     
     
-    def val_dataloader(self) -> torch.data.loader.DataLoader:
+    def val_dataloader(self) -> torch.utils.data.DataLoader:
         
         return pyg.loader.DataLoader(
             self.val_dataset, 
-            batch_size=self.batch_size, 
-            num_workers=self.num_workers)
+            batch_size=self.batch_size)
     
     
-    def test_dataloader(self) -> torch.data.loader.DataLoader:
+    def test_dataloader(self) -> torch.utils.data.DataLoader:
         
         return pyg.loader.DataLoader(
             self.test_dataset, 
-            batch_size=self.batch_size, 
-            num_workers=self.num_workers)
+            batch_size=self.batch_size)

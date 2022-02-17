@@ -4,7 +4,6 @@ from pytorch_lightning import LightningDataModule, LightningModule, Trainer as T
 from pytorch_lightning.accelerators import Accelerator
 from pytorch_lightning.callbacks.base import Callback
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.utilities.cli import DATAMODULE_REGISTRY, MODEL_REGISTRY, LightningCLI
 import torch
 from typing import List, Union
 
@@ -37,17 +36,26 @@ class Trainer(T):
             json.dump(results, f)
         
         torch.save(self.model.net, osp.join(ARTIFACTS_PATH, 'model.pth'))
-        
-        
+
+
 def main():
     
-    DATAMODULE_REGISTRY.register_classes(data, LitGNNDataModule, override=True)
-    MODEL_REGISTRY.register_classes(models, LitGAT, override=True)
+    datamodule = LitGNNDataModule(batch_size=256)
+    model = LitGAT(
+        in_channels=20,
+        hidden_channels=8,
+        out_channels=4,
+        num_layers=4,
+        dropout=.3,
+        heads=8,
+        lr=1e-4
+    )
     
-    cli = LightningCLI(trainer_class=Trainer)
-    cli.trainer.test(model=cli.model, datamodule=cli.datamodule)
-    
-    
+    trainer = Trainer(max_epochs=1, gpus=1)
+    trainer.fit(model=model, datamodule=datamodule)
+    trainer.test(model=model, datamodule=datamodule)
+
+
 if __name__ == '__main__':
     
     main()

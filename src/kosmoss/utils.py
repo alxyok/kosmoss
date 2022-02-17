@@ -6,7 +6,7 @@ import time
 from typing import Callable, List, Union
 import yaml
 
-from kosmoss import ROOT_PATH
+import kosmoss as km
 
 def prime_factors(n: int) -> List[int]:
     i = 2
@@ -33,7 +33,7 @@ def save_params(
     params: dict, 
     type_: Union['flattened', 'features']) -> None:
     
-    params_path = osp.join(ROOT_PATH, f'params.json')
+    params_path = osp.join(km.ROOT_PATH, 'params.json')
     
     data = {}
     if osp.isfile(params_path):
@@ -103,8 +103,10 @@ def load_attr(path: str, loader_type: Union['json', 'yaml']) -> dict:
     
     if loader_type == 'json':
         loader = json.load
+        
     elif loader_type == 'yaml':
         loader = yaml.safe_load
+        
     else:
         raise ValueError("expected 'json' or 'yaml'")
         

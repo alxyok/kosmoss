@@ -4,6 +4,7 @@ import os.path as osp
 import shutil
 import time
 from typing import Callable, List, Union
+import yaml
 
 import kosmoss as km
 
@@ -96,3 +97,18 @@ def makedirs(paths: Union[str, list]) -> Union[str, list]:
     
     return paths
 
+
+
+def load_attr(path: str, loader_type: Union['json', 'yaml']) -> dict:
+    
+    if loader_type == 'json':
+        loader = json.load
+    elif loader_type == 'yaml':
+        loader = yaml.safe_load
+    else:
+        raise ValueError("expected 'json' or 'yaml'")
+        
+    with open(path, "r") as stream:
+        attr = loader(stream)
+    
+    return attr

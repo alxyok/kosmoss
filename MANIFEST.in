@@ -1,3 +1,2 @@
-include *.yaml \
-        *.json \
-        *.sh
+include MANIFEST.in
+include LICENSE.txt

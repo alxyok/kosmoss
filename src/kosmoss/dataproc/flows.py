@@ -3,10 +3,20 @@ import os
 import os.path as osp
 import sys
     
-import kosmoss as km
-
+from kosmoss import (CONFIG, 
+                     PARAMS, 
+                     PROCESSED_DATA_PATH,
+                     utils)
 
 class BuildGraphsFlow(FlowSpec):
+    
+    timestep = Parameter('timestep',
+                         help='Shared temporal sampling step',
+                         default=CONFIG['timestep'])
+    
+    parameters = Parameter('parameters',
+                           help='Shared parameters',
+                           default=PARAMS[str(CONFIG['timestep'])]['features'])
         
     @step
     def start(self):
@@ -15,13 +25,9 @@ class BuildGraphsFlow(FlowSpec):
         """
         
         import numpy as np
-        import yaml
         
-        self.timestep = km.CONFIG['timestep']
-        self.params = km.PARAMS[str(self.timestep)]['features']
-        self.out_dir = km.utils.purgedirs(osp.join(km.PROCESSED_DATA_PATH, f"graphs-{self.timestep}"))
-            
-        self.shard = np.arange(km.PARAMS['num_shards'])
+        self.out_dir = utils.purgedirs(osp.join(PROCESSED_DATA_PATH, f"graphs-{self.timestep}"))
+        self.shard = np.arange(self.parameters['num_shards'])
         self.next(self.build_graphs, foreach="shard")
                   
                   
@@ -39,15 +45,15 @@ class BuildGraphsFlow(FlowSpec):
         import torch_geometric as pyg
         from typing import Union
         
-        main_dir = osp.join(km.PROCESSED_DATA_PATH, f"features-{self.timestep}")
+        main_dir = osp.join(PROCESSED_DATA_PATH, f"features-{self.timestep}")
         
         def load(name: Union['x', 'y', 'edge']) -> torch.Tensor:
             return torch.tensor(
                 np.lib.format.open_memmap(
                     mode='r', 
-                    dtype=self.params['dtype'], 
+                    dtype=self.parameters['dtype'], 
                     filename=osp.join(main_dir, name, f"{self.input}.npy"), 
-                    shape=tuple(self.params[f'{name}_shape'])))
+                    shape=tuple(self.parameters[f'{name}_shape'])))
                 
         x, y, edge = load("x"), load("y"), load("edge")
         

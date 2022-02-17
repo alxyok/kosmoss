@@ -4,14 +4,15 @@ import numpy as np
 import os.path as osp
 import sys
 
-import kosmoss as km
+from kosmoss import (CONFIG,
+                     PROCESSED_DATA_PATH)
 
 def main() -> None:
     
     sys.path.append(osp.abspath('..'))
 
-    timestep = km.CONFIG['timestep']
-    h5_path = osp.join(km.PROCESSED_DATA_PATH, f'features-{timestep}.h5')
+    timestep = CONFIG['timestep']
+    h5_path = osp.join(PROCESSED_DATA_PATH, f'features-{timestep}.h5')
 
     rank = MPI.COMM_WORLD.rank
     print(f'worker of rank {rank} started.')
@@ -25,7 +26,7 @@ def main() -> None:
         with h5py.File(h5_path, 'r') as feats:
 
             sharded_path = osp.join(
-                km.PROCESSED_DATA_PATH, 
+                PROCESSED_DATA_PATH, 
                 f'feats-{timestep}.{rank}.{subidx}.h5')
             with h5py.File(sharded_path, 'w') as sharded:
 

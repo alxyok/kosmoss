@@ -2,7 +2,7 @@
 
 export MAX_WORKERS=$(python -c "import psutil; print(psutil.cpu_count(logical=False))")
 
-USERNAME='mluser' python ../flows.py \
+USERNAME='mluser' python flows.py \
     run \
         --max-num-splits 6000 \
-        --max-workers ${MAX_WORKERS} >> ../logs/graph_build.stdout
+        --max-workers ${MAX_WORKERS}

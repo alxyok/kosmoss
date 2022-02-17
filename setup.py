@@ -37,4 +37,9 @@ setuptools.setup(
     packages=setuptools.find_packages(where="src"),
     include_package_data=True,
     python_requires=">=3.8",
+    entry_points= {
+        "distutils.commands": [
+            "download = kosmoss.dataproc._download:main",
+        ]
+    }
 )

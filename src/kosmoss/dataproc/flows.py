@@ -1,12 +1,8 @@
 from metaflow import FlowSpec, Parameter, step
-import os
 import os.path as osp
-import sys
     
-from kosmoss import (CONFIG, 
-                     PARAMS, 
-                     PROCESSED_DATA_PATH,
-                     utils)
+from kosmoss import CONFIG, PARAMS, PROCESSED_DATA_PATH,
+from kosmoss.utils import purgedirs
 
 class BuildGraphsFlow(FlowSpec):
     
@@ -26,7 +22,7 @@ class BuildGraphsFlow(FlowSpec):
         
         import numpy as np
         
-        self.out_dir = utils.purgedirs(osp.join(PROCESSED_DATA_PATH, f"graphs-{self.timestep}"))
+        self.out_dir = purgedirs(osp.join(PROCESSED_DATA_PATH, f"graphs-{self.timestep}"))
         self.shard = np.arange(self.parameters['num_shards'])
         self.next(self.build_graphs, foreach="shard")
                   

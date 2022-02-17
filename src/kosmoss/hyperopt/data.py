@@ -1,42 +1,22 @@
-# MIT License
-# 
-# Copyright (c) 2022 alxyok
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 import numpy as np
 import os.path as osp
-import pytorch_lightning as pl
+from pytorch_lightning import LightningDataModule
 from pytorch_lightning.utilities.cli import DATAMODULE_REGISTRY
 import sys
 import torch
 import torch_geometric as pyg
+from torch_geometric.data import InMemoryDataset
 
-import kosmoss as km
+from kosmoss import CONFIG, DATA_PATH, PARAMS
+from kosmoss.dataproc.flows import BuildGraphsFlow
 
 
-class ThreeDCorrectionDataset(pyg.data.InMemoryDataset):
+class ThreeDCorrectionDataset(InMemoryDataset):
     
     def __init__(self, root: str) -> None:
         
-        self.timestep = km.CONFIG['timestep']
-        self.params = km.PARAMS[str(self.timestep)]['features']
+        self.timestep = CONFIG['timestep']
+        self.params = PARAMS[str(self.timestep)]['features']
         self.num_shards = self.params['num_shards']
         
         super().__init__(root)
@@ -57,11 +37,11 @@ class ThreeDCorrectionDataset(pyg.data.InMemoryDataset):
         
     def process(self) -> None:
         
-        km.dataproc.flows.BuildGraphsFlow()
+        BuildGraphsFlow()
 
 
 @DATAMODULE_REGISTRY
-class LitThreeDCorrectionDataModule(pl.LightningDataModule):
+class LitThreeDCorrectionDataModule(LightningDataModule):
     
     def __init__(self, 
                  batch_size: int,
@@ -77,7 +57,7 @@ class LitThreeDCorrectionDataModule(pl.LightningDataModule):
     
     
     def setup(self, stage: str) -> None:
-        dataset = ThreeDCorrectionDataset(km.DATA_PATH).shuffle()
+        dataset = ThreeDCorrectionDataset(DATA_PATH).shuffle()
         length = len(dataset)
         
         self.test_dataset = dataset[1000000:]

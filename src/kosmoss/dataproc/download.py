@@ -1,9 +1,10 @@
 import climetlab as cml
-import setuptools
+from distutils.errors import DistutilsArgError
+from setuptools import Command
 
-import kosmoss as km
+from kosmoss import CACHE_DATA_PATH
 
-class Download(setuptools.Command):
+class Download(Command):
     
     user_options = [
         ('timestep=', 't', 'Temporal sampling step.'),
@@ -14,12 +15,11 @@ class Download(setuptools.Command):
         
     def finalize_options(self):
         if not self.timestep:
-            from distutils.errors import DistutilsArgError
             raise DistutilsArgError("You must specify --timestep option")
     
     def run(self):
 
-        cml.settings.set("cache-directory", km.CACHE_DATA_PATH)
+        cml.settings.set("cache-directory", CACHE_DATA_PATH)
         cmlds = cml.load_dataset(
             'maelstrom-radiation', 
             dataset='3dcorrection', 

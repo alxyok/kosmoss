@@ -2,14 +2,10 @@ import h5py
 from mpi4py import MPI
 import numpy as np
 import os.path as osp
-import sys
 
-from kosmoss import (CONFIG,
-                     PROCESSED_DATA_PATH)
+from kosmoss import CONFIG, PROCESSED_DATA_PATH
 
 def main() -> None:
-    
-    sys.path.append(osp.abspath('..'))
 
     timestep = CONFIG['timestep']
     h5_path = osp.join(PROCESSED_DATA_PATH, f'features-{timestep}.h5')

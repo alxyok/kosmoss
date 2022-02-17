@@ -1,65 +1,43 @@
-# MIT License
-#
-# Copyright (c) 2022 alxyok
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
-import numpy as np
-import os
 import os.path as osp
 import psutil
-import pytorch_lightning as pl
+from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from typing import Union
-import sys
 
-import kosmoss as km
+from kosmoss import CONFIG, LOGS_PATH, PARAMS
+from kosmoss.parallel.data import FlattenedDataModule
+from kosmoss.parallel.models import LitMLP
 
 def main(batch_size: int,
          num_processes: int) -> None:
 
-    pl.seed_everything(42, workers=True)
+    seed_everything(42, workers=True)
     
-    step = km.CONFIG['timestep']
-    params = km.PARAMS[str(step)]['flattened']
+    step = CONFIG['timestep']
+    params = PARAMS[str(step)]['flattened']
 
     x_feats = params['x_shape'][-1]
     y_feats = params['y_shape'][-1]
 
-    mlp = km.parallel.models.LitMLP(
+    mlp = LitMLP(
         in_channels=x_feats,
         hidden_channels=100,
         out_channels=y_feats
     )
 
     cores = psutil.cpu_count(logical=False)
-    datamodule = km.parallel.data.FlattenedDataModule(
+    datamodule = FlattenedDataModule(
         batch_size=batch_size // num_processes,
         num_workers=cores
     )
 
-    logger = pl.loggers.tensorboard.TensorBoardLogger(
-        save_dir=km.LOGS_PATH,
+    logger = TensorBoardLogger(
+        save_dir=LOGS_PATH,
         name='flattened_mlp_logs',
         log_graph=False
     )
 
-    gpu_trainer = pl.Trainer(
+    gpu_trainer = Trainer(
         max_epochs=1,
         logger=logger,
         deterministic=True,

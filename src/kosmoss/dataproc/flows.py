@@ -10,11 +10,11 @@ class BuildGraphsFlow(FlowSpec):
 
     # ...you can just add parameters to be read from the command line
     timestep = Parameter('timestep', help='Temporal sampling step', default=1000)
-    num_shards = Parameter('num_shards', help='Number of shards', default=848)
+    num_shards = Parameter('num_shards', help='Number of shards', default=6784)
     dtype = Parameter('dtype', help="NumPy's dtype", default='float32')
-    x_shape = Parameter('x_shape', help='Shape for x', default=(1280, 136, 17))
-    y_shape = Parameter('y_shape', help='Shape for y', default=(1280, 138, 1))
-    edge_shape = Parameter('edge_shape', help='Shape for edge', default=(1280, 137, 27))
+    x_shape = Parameter('x_shape', help='Shape for x', default=(160, 136, 20))
+    y_shape = Parameter('y_shape', help='Shape for y', default=(160, 138, 4))
+    edge_shape = Parameter('edge_shape', help='Shape for edge', default=(160, 137, 27))
         
     @step
     def start(self):
@@ -89,7 +89,7 @@ class BuildGraphsFlow(FlowSpec):
             data_list.append(data)
             
         # Save the list with torch.save()
-        out_path = osp.join(self.out_dir, f"data-{self.timestep}.{self.input}.pt")
+        out_path = osp.join(self.out_dir, f"data-{self.input}.pt")
         torch.save(data_list, out_path)
         
         self.next(self.join)

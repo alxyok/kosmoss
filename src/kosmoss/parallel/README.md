@@ -1,5 +1,7 @@
 The following material only covers optimizations that happen at the application level and does not cover lower-level optimization schemes. It really is a hands-on approach.
 
+It does not cover any questions related to accuracy improvement, just taking advantage of plain and pure hardware acceleration with the help of frameworks. For all questions about stability, refer to the DLI support.
+
 1. TensorFlow + Keras (optional)
 * Load the `tf.records` in a TFRecordDataset
 * Embed the Model creation in a Strategy scope

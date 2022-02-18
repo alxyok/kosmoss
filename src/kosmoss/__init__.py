@@ -6,7 +6,7 @@ import shutil
 import sys
 import yaml
 
-from kosmoss import utils
+from . import utils
 
 EGG_PATH = osp.join(osp.dirname(osp.realpath(__file__)))
 ROOT_PATH = osp.join(os.environ['HOME'], '.kosmoss')
@@ -25,6 +25,8 @@ LOGGER = logging.getLogger("")
 LOGGER.addHandler(logging.StreamHandler(sys.stdout))
 
 shutil.copy(osp.join(EGG_PATH, "config", "config.yaml"), ROOT_PATH)
-shutil.copy(osp.join(EGG_PATH, "config", "params.json"), ROOT_PATH)
 CONFIG = utils.load_attr(osp.join(ROOT_PATH, "config.yaml"), 'yaml')
-PARAMS = utils.load_attr(osp.join(ROOT_PATH, "params.json"), 'json')
+
+metadata_path = osp.join(ROOT_PATH, "metadata.json")
+if osp.isfile(metadata_path):
+    METADATA = utils.load_attr(metadata_path, 'json')

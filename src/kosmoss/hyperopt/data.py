@@ -7,36 +7,36 @@ import torch_geometric as pyg
 from torch_geometric.data import InMemoryDataset
 from typing import List
 
-from kosmoss import CONFIG, DATA_PATH, PARAMS
+from kosmoss import CONFIG, DATA_PATH, METADATA
 from kosmoss.dataproc.flows import BuildGraphsFlow
 
 
 class GNNDataset(InMemoryDataset):
     
-    def __init__(self, root: str) -> None:
+    def __init__(self) -> None:
         
         self.timestep = CONFIG['timestep']
-        self.params = PARAMS[str(self.timestep)]['features']
+        self.params = METADATA[str(self.timestep)]['features']
         self.num_shards = self.params['num_shards']
         
-        super().__init__(root)
-        self.data, self.slices = torch.load(path)
+        super().__init__(DATA_PATH)
+        self.data, self.slices = torch.load(self.processed_file_path)
 
     @property
     def raw_file_names(self) -> None:
-        pass
+        return [""]
 
     @property
     def processed_file_names(self) -> List[str]:
-        return [f"data-{self.timestep}.{shard}.pt" for shard in np.arange(self.num_shards)]
+        return [osp.join(f"graphs-{self.timestep}", f"data.{shard}.pt") 
+                for shard in np.arange(self.num_shards)]
     
     
     def download(self) -> None:
-        raise Exception("Execute the Notebooks in this Bootcamp following natural order.")
+        raise Exception("Execute the Notebooks in this Bootcamp following the order defined.")
 
         
     def process(self) -> None:
-        
         BuildGraphsFlow()
 
 
@@ -54,7 +54,7 @@ class LitGNNDataModule(LightningDataModule):
     
     
     def setup(self, stage: str) -> None:
-        dataset = GNNDataset(DATA_PATH).shuffle()
+        dataset = GNNDataset().shuffle()
         length = len(dataset)
         
         self.test_dataset = dataset[1000000:]

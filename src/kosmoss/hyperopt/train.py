@@ -8,7 +8,7 @@ import torch
 from typing import List, Union
 
 from kosmoss import ARTIFACTS_PATH, LOGS_PATH
-from kosmoss.hyperopt import data, models
+# from kosmoss.hyperopt import data, models
 from kosmoss.hyperopt.data import LitGNNDataModule
 from kosmoss.hyperopt.models import LitGAT
 
@@ -50,6 +50,8 @@ def main():
         heads=8,
         lr=1e-4
     )
+    print(datamodule)
+    print(model)
     
     trainer = Trainer(max_epochs=1, gpus=1)
     trainer.fit(model=model, datamodule=datamodule)

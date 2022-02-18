@@ -1,10 +1,11 @@
 #!/bin/bash -l
 
-#SBATCH --nodes=4
-#SBATCH --gres=gpu:8
+#SBATCH --nodes=2
+#SBATCH --gres=gpu:2
 #SBATCH --ntasks-per-node=8
 #SBATCH --mem=0
-#SBATCH --time=0-02:00:00
+#SBATCH --time=0-00:30:00
+#SBATCH -p milan7513_A100
 
 # activate conda env
 source activate $1

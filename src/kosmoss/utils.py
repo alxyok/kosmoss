@@ -28,12 +28,12 @@ def prime_factors(n: int) -> List[int]:
 
 
 
-def save_params(
+def save_metadata(
     step: int, 
     params: dict, 
     type_: Union['flattened', 'features']) -> None:
     
-    params_path = osp.join(km.ROOT_PATH, 'params.json')
+    params_path = osp.join(km.ROOT_PATH, 'metadata.json')
     
     data = {}
     if osp.isfile(params_path):

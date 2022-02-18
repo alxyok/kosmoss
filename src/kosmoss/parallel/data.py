@@ -4,7 +4,7 @@ from pytorch_lightning import LightningDataModule
 import torch
 from typing import Tuple, Union
 
-from kosmoss import CONFIG, PARAMS, PROCESSED_DATA_PATH
+from kosmoss import CONFIG, METADATA, PROCESSED_DATA_PATH
 
 class FlattenedDataset(torch.utils.data.Dataset):
     
@@ -14,7 +14,7 @@ class FlattenedDataset(torch.utils.data.Dataset):
         super().__init__()
         self.step = step
         self.mode = mode
-        self.params = PARAMS[str(self.step)]['flattened']
+        self.params = METADATA[str(self.step)]['flattened']
     
     def __len__(self) -> int:
         

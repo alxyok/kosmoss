@@ -4,7 +4,7 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from typing import Union
 
-from kosmoss import CONFIG, LOGS_PATH, PARAMS
+from kosmoss import CONFIG, LOGS_PATH, METADATA
 from kosmoss.parallel.data import FlattenedDataModule
 from kosmoss.parallel.models import LitMLP
 
@@ -17,7 +17,7 @@ def main(batch_size: int,
     seed_everything(42, workers=True)
     
     step = CONFIG['timestep']
-    params = PARAMS[str(step)]['flattened']
+    params = METADATA[str(step)]['flattened']
 
     x_feats = params['x_shape'][-1]
     y_feats = params['y_shape'][-1]

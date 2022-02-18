@@ -40,7 +40,7 @@ class Trainer(T):
 
 def main():
     
-    datamodule = LitGNNDataModule(batch_size=256)
+    datamodule = LitGNNDataModule(batch_size=16)
     model = LitGAT(
         in_channels=20,
         hidden_channels=8,
@@ -50,10 +50,8 @@ def main():
         heads=8,
         lr=1e-4
     )
-    print(datamodule)
-    print(model)
     
-    trainer = Trainer(max_epochs=1, gpus=1)
+    trainer = Trainer(max_epochs=1, gpus=4, strategy="ddp")
     trainer.fit(model=model, datamodule=datamodule)
     trainer.test(model=model, datamodule=datamodule)
 

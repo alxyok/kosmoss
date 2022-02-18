@@ -4,23 +4,22 @@ from pytorch_lightning import LightningDataModule
 from pytorch_lightning.utilities.cli import DATAMODULE_REGISTRY
 import torch
 import torch_geometric as pyg
-from torch_geometric.data import InMemoryDataset
+from torch_geometric.data import Dataset
 from typing import List
 
 from kosmoss import CONFIG, DATA_PATH, METADATA
 from kosmoss.dataproc.flows import BuildGraphsFlow
 
 
-class GNNDataset(InMemoryDataset):
+class GNNDataset(Dataset):
     
     def __init__(self) -> None:
         
-        self.timestep = CONFIG['timestep']
+        self.timestep = str(CONFIG['timestep'])
         self.params = METADATA[str(self.timestep)]['features']
         self.num_shards = self.params['num_shards']
         
         super().__init__(DATA_PATH)
-        self.data, self.slices = torch.load(self.processed_file_path)
 
     @property
     def raw_file_names(self) -> None:
@@ -28,7 +27,7 @@ class GNNDataset(InMemoryDataset):
 
     @property
     def processed_file_names(self) -> List[str]:
-        return [osp.join(f"graphs-{self.timestep}", f"data.{shard}.pt") 
+        return [osp.join(f"graphs-{self.timestep}", f"data-{shard}.pt") 
                 for shard in np.arange(self.num_shards)]
     
     
@@ -38,6 +37,20 @@ class GNNDataset(InMemoryDataset):
         
     def process(self) -> None:
         BuildGraphsFlow()
+        
+    def len(self):
+        return self.params['dataset_len']
+
+    def get(self, idx):
+        
+        shard_size = self.len() // self.num_shards
+        fileidx = idx // shard_size
+        rowidx = idx % shard_size
+        
+        data_list = torch.load(osp.join(self.processed_dir, f"graphs-{self.timestep}", f'data-{fileidx}.pt'))
+        data = data_list[rowidx]
+        
+        return data
 
 
 # @DATAMODULE_REGISTRY
@@ -57,9 +70,9 @@ class LitGNNDataModule(LightningDataModule):
         dataset = GNNDataset().shuffle()
         length = len(dataset)
         
-        self.test_dataset = dataset[1000000:]
-        self.val_dataset = dataset[900000:1000000]
-        self.train_dataset = dataset[:900000]
+        self.test_dataset = dataset[int(length * .9):]
+        self.val_dataset = dataset[int(length * .8):int(length * .9)]
+        self.train_dataset = dataset[:int(length * .8)]
     
     
     def train_dataloader(self) -> torch.utils.data.DataLoader:

@@ -24,7 +24,7 @@ class CommonModule(LightningModule):
         y_hat = self(batch.x, batch.edge_index)
         loss = F.mean_squared_error(y_hat, batch.y)
 
-        self.log(f"{stage}_loss", loss, prog_bar=True, on_step=True, batch_size=batch_size)
+        self.log(f"{stage}_loss", loss, prog_bar=True, on_step=True)
         
         return y_hat, loss
 
@@ -58,6 +58,7 @@ class LitGAT(CommonModule):
                               hidden_channels=hidden_channels,
                               out_channels=out_channels,
                               num_layers=num_layers,
+                              edge_dim=32,
                               dropout=dropout,
                               act=nn.SiLU(inplace=True),
                               heads=heads)

@@ -22,7 +22,7 @@ class GNNDataset(Dataset):
         super().__init__(DATA_PATH)
 
     @property
-    def raw_file_names(self) -> None:
+    def raw_file_names(self) -> list:
         return [""]
 
     @property
@@ -32,7 +32,7 @@ class GNNDataset(Dataset):
     
     
     def download(self) -> None:
-        raise Exception("Execute the Notebooks in this Bootcamp following the order defined.")
+        raise Exception("Execute the Notebooks in this Bootcamp following the order defined by the Readme.")
 
         
     def process(self) -> None:
@@ -80,6 +80,7 @@ class LitGNNDataModule(LightningDataModule):
         return pyg.loader.DataLoader(
             self.train_dataset, 
             batch_size=self.batch_size, 
+            num_workers=4,
             shuffle=True)
     
     
@@ -87,11 +88,13 @@ class LitGNNDataModule(LightningDataModule):
         
         return pyg.loader.DataLoader(
             self.val_dataset, 
-            batch_size=self.batch_size)
+            batch_size=self.batch_size,
+            num_workers=4,)
     
     
     def test_dataloader(self) -> torch.utils.data.DataLoader:
         
         return pyg.loader.DataLoader(
             self.test_dataset, 
-            batch_size=self.batch_size)
+            batch_size=self.batch_size,
+            num_workers=4,)

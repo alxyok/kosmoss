@@ -33,7 +33,8 @@ class CommonModule(LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        y_hat, _ = self._common_step(batch, batch_idx, "val")
+        y_hat, loss = self._common_step(batch, batch_idx, "val")
+        return {'val_loss': loss}
 
     def test_step(self, batch, batch_idx):
         y_hat, _ = self._common_step(batch, batch_idx, "test")

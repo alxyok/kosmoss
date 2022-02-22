@@ -5,7 +5,6 @@ from torch_geometric.nn.models import GAT
 import torch_optimizer as optim
 import torchmetrics.functional as F
 from typing import Dict, List, Union
-import wandb
 
 
 class LitGAT(LightningModule):
@@ -30,7 +29,6 @@ class LitGAT(LightningModule):
         y_hat = self(batch.x, batch.edge_index)
         loss = F.mean_squared_error(y_hat, batch.y)
         self.log(f"{stage}_loss", loss, prog_bar=True, on_step=True)
-        # wandb.log({f"{stage}_loss": loss}, step=batch_idx)
         return y_hat, loss
 
     def training_step(self, batch: Batch, batch_idx: int) -> torch.Tensor:
@@ -38,11 +36,11 @@ class LitGAT(LightningModule):
         return loss
 
     def validation_step(self, batch: Batch, batch_idx: int) -> Dict[str, torch.Tensor]:
-        y_hat, loss = self._common_step(batch, batch_idx, "val")
-        return {'val_loss': loss}
+        _, _ = self._common_step(batch, batch_idx, "val")
+        # return {'val_loss': loss}
 
     def test_step(self, batch: Batch, batch_idx: int) -> None:
-        y_hat, _ = self._common_step(batch, batch_idx, "test")
+        _, _ = self._common_step(batch, batch_idx, "test")
         
     def configure_optimizers(self) -> optim.Optimizer:
         return optim.AdamP(self.parameters(), lr=self.lr)

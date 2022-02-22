@@ -5,6 +5,7 @@ import os.path as osp
 from pytorch_lightning import LightningDataModule, LightningModule, Trainer
 from pytorch_lightning.accelerators import Accelerator
 from pytorch_lightning.callbacks.base import Callback
+from pytorch_lightning.loggers.wandb import WandbLogger
 from ray import tune
 from ray.tune import CLIReporter
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
@@ -21,6 +22,8 @@ from kosmoss.hyperopt.models import LitGAT
 
 def main() -> None:
     
+    project = os.environ['wandb_project']
+    
     def train_gnns(config: dict,
                    num_epochs: int = 10,
                    num_gpus: int = 0) -> None:
@@ -29,15 +32,13 @@ def main() -> None:
         model = LitGAT(**config["model"])
     
         kwargs = {
+            # "logger": WandbLogger(project=project),
             "gpus": num_gpus,
             "strategy": "ddp",
             "max_epochs": num_epochs,
             "callbacks": [
                 TuneReportCallback({
-                    "loss": "train_loss"
-                }, on="batch_end"),
-                TuneReportCallback({
-                    "loss": "val_loss"
+                    "val_loss": "val_loss"
                 }, on="validation_end"),
             ],
             "progress_bar_refresh_rate": 0
@@ -68,7 +69,7 @@ def main() -> None:
 
         scheduler = ASHAScheduler(
             max_t=num_epochs,
-            grace_period=10,
+            grace_period=num_epochs,
             reduction_factor=2)
 
         # Add on-the-fly named parameters to the set, as extra
@@ -87,7 +88,7 @@ def main() -> None:
             },
             
             # Set the metric to watch, and how to consider metric progress
-            metric="loss",
+            metric="val_loss",
             mode="min",
             
             # Set the config dict of all HPs
@@ -107,7 +108,7 @@ def main() -> None:
             
             # Set the logger to push results to your favorite logger, and local log dir
             callbacks=[
-                WandbLoggerCallback(project=os.environ['wandb_project'])
+                WandbLoggerCallback(project=project)
             ],
             local_dir=LOGS_PATH,
             # max_concurrent_trials=None

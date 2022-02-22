@@ -1,165 +1,34 @@
 import json
+import numpy as np
 import os
 import os.path as osp
-import numpy as np
 from pytorch_lightning import LightningDataModule, LightningModule, Trainer
 from pytorch_lightning.accelerators import Accelerator
 from pytorch_lightning.callbacks.base import Callback
 from ray import tune
 from ray.tune import CLIReporter
-from ray.tune.schedulers import ASHAScheduler, PopulationBasedTraining
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 from ray.tune.integration.wandb import WandbLoggerCallback
+from ray.tune.schedulers import ASHAScheduler, PopulationBasedTraining
+from ray.tune.suggest.hebo import HEBOSearch
 import torch
-import torch.nn as nn
-import torch_geometric as pyg
-import torch_optimizer as optim
-from torch_geometric.data import Dataset
-import torchmetrics.functional as F
 from typing import List, Union
 
-from kosmoss import ARTIFACTS_PATH, CONFIG, DATA_PATH, LOGS_PATH, METADATA
-from kosmoss.dataproc.flows import BuildGraphsFlow
+from kosmoss import ARTIFACTS_PATH, LOGS_PATH
+from kosmoss.hyperopt.data import LitGNNDataModule
+from kosmoss.hyperopt.models import LitGAT
 
 
-
-class LitGNNDataModule(LightningDataModule):
+def main() -> None:
     
-    class GNNDataset(Dataset):
-
-        def __init__(self) -> None:
-
-            self.timestep = str(CONFIG['timestep'])
-            self.params = METADATA[str(self.timestep)]['features']
-            self.num_shards = self.params['num_shards']
-
-            super().__init__(DATA_PATH)
-
-        @property
-        def raw_file_names(self) -> list:
-            return [""]
-
-        @property
-        def processed_file_names(self) -> List[str]:
-            return [osp.join(f"graphs-{self.timestep}", f"data-{shard}.pt") 
-                    for shard in np.arange(self.num_shards)]
-
-
-        def download(self) -> None:
-            raise Exception("Execute the Notebooks in this Bootcamp following the order defined by the Readme.")
-
-
-        def process(self) -> None:
-            BuildGraphsFlow()
-
-        def len(self):
-            return self.params['dataset_len']
-
-        def get(self, idx):
-
-            shard_size = self.len() // self.num_shards
-            fileidx = idx // shard_size
-            rowidx = idx % shard_size
-
-            data_list = torch.load(osp.join(self.processed_dir, f"graphs-{self.timestep}", f'data-{fileidx}.pt'))
-            data = data_list[rowidx]
-
-            return data
+    def train_gnns(config: dict,
+                   num_epochs: int = 10,
+                   num_gpus: int = 0) -> None:
         
-    
-    def __init__(self, batch_size: int) -> None:
-        
-        self.bs = batch_size
-        super().__init__()
-        
-        
-    def prepare_data(self) -> None:
-        pass
-    
-    
-    def setup(self, stage: str) -> None:
-        dataset = LitGNNDataModule.GNNDataset().shuffle()
-        length = len(dataset)
-        
-        self.testds = dataset[int(length * .9):]
-        self.valds = dataset[int(length * .8):int(length * .9)]
-        self.trainds = dataset[:int(length * .8)]
-    
-    
-    def train_dataloader(self) -> torch.utils.data.DataLoader:
-        return pyg.loader.DataLoader(self.trainds, batch_size=self.bs, num_workers=4, shuffle=True)
-    
-    
-    def val_dataloader(self) -> torch.utils.data.DataLoader:
-        return pyg.loader.DataLoader(self.valds, batch_size=self.bs, num_workers=4)
-    
-    
-    def test_dataloader(self) -> torch.utils.data.DataLoader:
-        return pyg.loader.DataLoader(self.testds, batch_size=self.bs, num_workers=4)
-
-    
-    
-class LitGAT(LightningModule):
-    
-    def __init__(self, config):
-        super().__init__()
-        self.save_hyperparameters()
-        self.lr = config['lr']
-        import pprint
-        pprint.pprint(config)
-        self.net = pyg.nn.GAT(
-            in_channels=config['in_feats'], 
-            out_channels=config['out_feats'],
-            hidden_channels=config['hidden_feats'],
-            num_layers=config['num_layers'],
-            edge_dim=config['edge_dim'],
-            dropout=config['dropout'],
-            heads=config['heads'],
-            act=config['act']
-        )
-
-    def forward(self, x, edge_index):
-        return self.net(x, edge_index)
-    
-    def _common_step(self, 
-                     batch, 
-                     batch_idx, 
-                     stage: Union['train', 'val', 'test'] = "train") -> List[torch.Tensor]:
-        
-        y_hat = self(batch.x, batch.edge_index)
-        loss = F.mean_squared_error(y_hat, batch.y)
-
-        self.log(f"{stage}_loss", loss, prog_bar=True, on_step=True)
-        
-        return y_hat, loss
-
-    def training_step(self, batch, batch_idx):
-        _, loss = self._common_step(batch, batch_idx, "train")
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        y_hat, loss = self._common_step(batch, batch_idx, "val")
-        return {'val_loss': loss}
-
-    def test_step(self, batch, batch_idx):
-        y_hat, _ = self._common_step(batch, batch_idx, "test")
-    
-    def configure_optimizers(self):
-        return optim.AdamP(self.parameters(), lr=self.lr)
-    
-
-
-def main():
-    
-    def train_gnns(config,
-                   num_epochs=10,
-                   num_gpus=1):
-        
-        datamodule = LitGNNDataModule(config['batch_size'])
-        model = LitGAT(config)
+        datamodule = LitGNNDataModule(**config['data'])
+        model = LitGAT(**config["model"])
     
         kwargs = {
-            # "logger": WandbLoggerCallback(project=os.environ['wandb_project']),
             "gpus": num_gpus,
             "strategy": "ddp",
             "max_epochs": num_epochs,
@@ -167,31 +36,34 @@ def main():
                 TuneReportCallback({
                     "loss": "train_loss"
                 }, on="batch_end"),
+                TuneReportCallback({
+                    "loss": "val_loss"
+                }, on="validation_end"),
             ],
             "progress_bar_refresh_rate": 0
         }
-
         trainer = Trainer(**kwargs)
         trainer.fit(model, datamodule)
     
-    def tune_gnns_asha(num_samples=10, 
-                       num_epochs=10, 
-                       gpus_per_trial=1):
+    def tune_gnns_asha(num_samples: int = 4, 
+                       num_epochs: int = 10, 
+                       gpus_per_trial: int = 0) -> dict:
     
         config = {
-            # Fixed set of HParams
-            "batch_size": 512,
-            "in_feats": 20,
-            "out_feats": 4,
-            "act": nn.SiLU(inplace=True),
-            
-            # HPO sampled by Ray.Tune
-            "hidden_feats": tune.choice([2 ** k for k in np.arange(2, 6)]),
-            "edge_dim": tune.choice([2 ** k for k in np.arange(2, 6)]),
-            "num_layers": tune.randint(4, 10),
-            "lr": tune.loguniform(1e-4, 1e-1),
-            "dropout": tune.uniform(0, 1),
-            "heads": tune.randint(4, 8)
+            "data": {"batch_size": 256},
+            "model": {
+                # Fixed HPs
+                "in_channels": 20,
+                "out_channels": 4,
+                
+                # Sampled HPs
+                "hidden_channels": int(tune.choice([2 ** k for k in np.arange(2, 6)]).sample()),
+                "edge_dim": tune.choice([2 ** k for k in np.arange(2, 6)]),
+                "num_layers": tune.randint(4, 10),
+                "lr": tune.loguniform(1e-4, 1e-1),
+                "dropout": tune.uniform(0, 1),
+                "heads": tune.randint(4, 8)
+            }
         }
 
         scheduler = ASHAScheduler(
@@ -199,32 +71,52 @@ def main():
             grace_period=10,
             reduction_factor=2)
 
-        # reporter = CLIReporter(
-        #     parameter_columns=list(config.keys()),
-        #     metric_columns=["loss", "training_iteration"])
+        # Add on-the-fly named parameters to the set, as extra
+        train_with_params_fn = tune.with_parameters(
+            train_gnns,
+            num_epochs=num_epochs,
+            num_gpus=gpus_per_trial)
 
-        train_fn_with_parameters = tune.with_parameters(train_gnns,
-                                                        num_epochs=num_epochs,
-                                                        num_gpus=gpus_per_trial)
-        resources_per_trial = {"cpu": 4, "gpu": gpus_per_trial}
-
+        # Run the execution flow
         analysis = tune.run(
-            train_fn_with_parameters,
-            resources_per_trial=resources_per_trial,
+            # Set the callable an resources to mobilize for every trial
+            run_or_experiment=train_with_params_fn,
+            resources_per_trial={
+                "cpu": 4, 
+                "gpu": gpus_per_trial
+            },
+            
+            # Set the metric to watch, and how to consider metric progress
             metric="loss",
             mode="min",
+            
+            # Set the config dict of all HPs
             config=config,
+            
+            # Set the total number of tries
             num_samples=num_samples,
+            
+            # Set the execution scheduler
             scheduler=scheduler,
-            # progress_reporter=reporter,
+            
+            # Set the search algorithm for sampling HPs
+            # search_alg=HEBOSearch(),
+            
+            # Give a name prefix to all experiments
             name="tune_gnns_asha",
-            callbacks=[WandbLoggerCallback(project=os.environ['wandb_project'])],
-            max_concurrent_trials=None
+            
+            # Set the logger to push results to your favorite logger, and local log dir
+            callbacks=[
+                WandbLoggerCallback(project=os.environ['wandb_project'])
+            ],
+            local_dir=LOGS_PATH,
+            # max_concurrent_trials=None
         )
-
-        print("Best hyperparameters found were: ", analysis.best_config)
         
-    tune_gnns_asha()
+        return analysis.best_config
+    
+    best_config = tune_gnns_asha()
+    print("Best HP-set yet: ", best_config)
 
 
 if __name__ == '__main__':

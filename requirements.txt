@@ -4,6 +4,7 @@ climetlab-maelstrom-radiation
 dask
 eccodes
 h5py
+HEBO
 matplotlib
 matplotlib-inline
 metaflow

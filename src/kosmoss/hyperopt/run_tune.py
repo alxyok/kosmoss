@@ -38,8 +38,12 @@ def main() -> None:
             "max_epochs": num_epochs,
             "callbacks": [
                 TuneReportCallback({
+                    "train_loss": "train_loss",
                     "val_loss": "val_loss"
-                }, on="validation_end"),
+                }, on=[
+                    "batch_end",
+                    "validation_end"
+                ]),
             ],
             "progress_bar_refresh_rate": 0
         }
@@ -53,17 +57,17 @@ def main() -> None:
         config = {
             "data": {"batch_size": 256},
             "model": {
-                # Fixed HPs
+                # Fixed ins-and-outs
                 "in_channels": 20,
                 "out_channels": 4,
                 
-                # Sampled HPs
-                "hidden_channels": int(tune.choice([2 ** k for k in np.arange(2, 6)]).sample()),
-                "edge_dim": tune.choice([2 ** k for k in np.arange(2, 6)]),
+                # HPs, each sampled from its own search space
+                "hidden_channels": int(tune.choice([2 ** k for k in np.arange(4, 6)]).sample()),
+                "edge_dim": tune.choice([2 ** k for k in np.arange(4, 6)]),
                 "num_layers": tune.randint(4, 10),
                 "lr": tune.loguniform(1e-4, 1e-1),
                 "dropout": tune.uniform(0, 1),
-                "heads": tune.randint(4, 8)
+                "heads": int(tune.choice([4, 8]).sample())
             }
         }
 
@@ -101,15 +105,13 @@ def main() -> None:
             scheduler=scheduler,
             
             # Set the search algorithm for sampling HPs
-            # search_alg=HEBOSearch(),
+            search_alg=HEBOSearch(), #metric="val_loss", mode="min"),
             
             # Give a name prefix to all experiments
             name="tune_gnns_asha",
             
             # Set the logger to push results to your favorite logger, and local log dir
-            callbacks=[
-                WandbLoggerCallback(project=project)
-            ],
+            callbacks=[WandbLoggerCallback(project=project, dir=LOGS_PATH)],
             local_dir=LOGS_PATH,
             # max_concurrent_trials=None
         )
@@ -122,4 +124,6 @@ def main() -> None:
 
 if __name__ == '__main__':
     
+    # Turn on this flag to allow the report callback to fail gracefully if all metrics are not populated at each 'on' step
+    os.environ["TUNE_DISABLE_STRICT_METRIC_CHECKING"] = 1
     main()

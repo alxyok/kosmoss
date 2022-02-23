@@ -27,7 +27,7 @@ class HRLayer(tf.keras.layers.Layer):
         
         return -self.g_cp * tf.math.divide(flux_diff, net_press)
 
-    
+
 def create_datasets(config):
 
     def parse_fn(x, y):
@@ -148,7 +148,7 @@ def train_mlp(config, num_epochs):
             })
         ])
 
-    
+
 def main():
     
     num_epochs = 50
@@ -185,7 +185,7 @@ def main():
     )
     
     print("Best hyperparameters found were: ", analysis.best_config)
-    
+
 if __name__ == '__main__':
     
     main()

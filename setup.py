@@ -21,6 +21,7 @@ setuptools.setup(
     entry_points= {
         "distutils.commands": [
             "download = kosmoss.dataproc.download:Download",
+            "convert = kosmoss.dataproc.download:ConvertTFRecord",
         ]
     },
     package_data={

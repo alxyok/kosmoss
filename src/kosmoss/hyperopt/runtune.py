@@ -114,6 +114,9 @@ def main() -> None:
             callbacks=[WandbLoggerCallback(project=project, dir=LOGS_PATH)],
             local_dir=LOGS_PATH,
             # max_concurrent_trials=None
+            
+            # And Sh**-**!
+            verbose=0
         )
         
         return analysis.best_config

@@ -5,7 +5,7 @@ from ray.tune.suggest.hebo import HEBOSearch
 from ray.tune.integration.keras import TuneReportCallback
 import tensorflow as tf
 
-from kosmoss import CACHE_DATA_PATH
+from kosmoss import CACHE_DATA_PATH, CONFIG
 
 @tf.keras.utils.register_keras_serializable()
 class HeatingRateLayer(tf.keras.layers.Layer):
@@ -60,11 +60,12 @@ def create_datasets(config):
         return new_x, new_y
     
 
+    timestep = int(CONFIG['timestep'])
     cml.settings.set("cache-directory", CACHE_DATA_PATH)
     cmlds = cml.load_dataset('maelstrom-radiation-tf',
-                             dataset = '3dcorrection',
-                             timestep = list(range(0, 3501, 1000)), 
-                             filenum = list(range(5)),
+                             dataset='3dcorrection',
+                             timestep=list(range(0, 3501, timestep)), 
+                             filenum=list(range(5)),
                              norm=True,
                              hr_units="K d-1",)
     

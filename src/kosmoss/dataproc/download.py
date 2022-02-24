@@ -2,8 +2,10 @@ import climetlab as cml
 from distutils.errors import DistutilsArgError
 from setuptools import Command
 
-from kosmoss import CACHE_DATA_PATH
+from kosmoss import CACHED_DATA_PATH
         
+cml.settings.set("cache-directory", CACHED_DATA_PATH)
+
 class Download(Command):
     
     user_options = [
@@ -18,7 +20,6 @@ class Download(Command):
             raise DistutilsArgError("You must specify --timestep option")
     
     def run(self):
-        cml.settings.set("cache-directory", CACHE_DATA_PATH)
         cml.load_dataset(
             name="maelstrom-radiation",
             dataset="3dcorrection",
@@ -42,7 +43,6 @@ class ConvertTFRecord(Command):
             raise DistutilsArgError("You must specify --timestep option >= 500")
     
     def run(self):
-        cml.settings.set("cache-directory", CACHE_DATA_PATH)
         cmlds = cml.load_dataset(
             name="maelstrom-radiation-tf",
             dataset="3dcorrection",

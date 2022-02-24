@@ -90,7 +90,18 @@ class LitMLP(ThreeDCorrectionModule):
             epsilon = torch.tensor(1.e-8).type_as(x)
 
             return (x - mean) / (std + self.epsilon)
+
     
+    # Doing the feature selection in the model is maybe less efficient from a data loading perspecitve, but way more flexible. 
+    # That way, you can train a model
+    class SelectFeatures(nn.Module):
+
+        def __init__(self) -> None:
+            super().__init__()
+            
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            start_idx = 276 + 136 + 17
     
     def __init__(self, 
                  in_channels: int, 
@@ -101,11 +112,13 @@ class LitMLP(ThreeDCorrectionModule):
         super().__init__()
         
         self.lr = lr
+        
         self.normalization_layer = LitMLP.Normalize(self.epsilon)
+        self.feature_selection_layer = LitMLP.SelectFeatures()
         
         self.net = nn.Sequential(
             self.normalization_layer,
-            # self.feature_engineering_layer,
+            self.feature_selection_layer,
             nn.Linear(in_channels, hidden_channels),
             nn.SiLU(),
             nn.Linear(hidden_channels, hidden_channels),

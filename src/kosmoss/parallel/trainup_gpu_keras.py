@@ -12,7 +12,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l1_l2
 from tensorflow.keras.utils import register_keras_serializable
 
-from kosmoss import CACHE_DATA_PATH, CONFIG
+from kosmoss import CACHED_DATA_PATH, CONFIG
 
 @register_keras_serializable()
 class HeatingRateLayer(Layer):
@@ -68,7 +68,7 @@ def create_datasets(config):
     
 
     timestep = int(CONFIG['timestep'])
-    cml.settings.set("cache-directory", CACHE_DATA_PATH)
+    cml.settings.set("cache-directory", CACHED_DATA_PATH)
     cmlds = cml.load_dataset('maelstrom-radiation-tf',
                              dataset='3dcorrection',
                              timestep=list(range(0, 3501, timestep)), 
@@ -113,7 +113,7 @@ def create_model(config):
         sw_diff = Dense(138, activation='linear', name="sw_diff")(dense)
         sw_add = Dense(138, activation="linear", name="sw_add")(dense)
 
-        hr_sw = HRLayer(name="hr_sw")([sw_diff, inputs[-1]])
+        hr_sw = HeatingRateLayer(name="hr_sw")([sw_diff, inputs[-1]])
 
         return {
             "inputs": inputs, 
@@ -177,5 +177,7 @@ def main():
     train_mlp(config, num_epochs)
 
 if __name__ == '__main__':
+    
+    tf.config.set_soft_device_placement(False)
     
     main()

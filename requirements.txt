@@ -18,7 +18,6 @@ psutil
 pylint
 pytorch-lightning
 PyYAML
-randomname
 ray[tune]
 scikit-learn
 scipy

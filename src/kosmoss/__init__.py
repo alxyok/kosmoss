@@ -12,9 +12,9 @@ EGG_PATH = osp.join(osp.dirname(osp.realpath(__file__)))
 ROOT_PATH = osp.join(os.environ['HOME'], '.kosmoss')
 os.makedirs(ROOT_PATH, exist_ok=True)
 
-DATA_PATH, CACHE_DATA_PATH, RAW_DATA_PATH, PROCESSED_DATA_PATH, ARTIFACTS_PATH, LOGS_PATH = utils.makedirs([
+DATA_PATH, CACHED_DATA_PATH, RAW_DATA_PATH, PROCESSED_DATA_PATH, ARTIFACTS_PATH, LOGS_PATH = utils.makedirs([
     osp.join(ROOT_PATH, 'data'),
-    osp.join(ROOT_PATH, 'data', 'cache'),
+    osp.join(ROOT_PATH, 'data', 'cached'),
     osp.join(ROOT_PATH, 'data', 'raw'),
     osp.join(ROOT_PATH, 'data', 'processed'),
     osp.join(ROOT_PATH, 'artifacts'),

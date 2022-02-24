@@ -39,7 +39,7 @@ class ConvertTFRecord(Command):
         self.batchsize = 256
         
     def finalize_options(self):
-        if not self.timestep or self.timestep < 500:
+        if not self.timestep or int(self.timestep) < 500:
             raise DistutilsArgError("You must specify --timestep option >= 500")
     
     def run(self):

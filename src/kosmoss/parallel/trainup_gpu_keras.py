@@ -76,9 +76,12 @@ def create_datasets(config):
                              norm=True,
                              hr_units="K d-1",)
     
+    # All data operations are created in a DAG, and delayed to execution time, for optimization purpuses
     tfds = cmlds.to_tfdataset(batch_size=config["batch_size"], repeat=False)
     tfds = tfds.map(parse_fn)
-    tfds = tfds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    
+    # Prefetch data while GPU is busy with training, so that CPU is never idle
+    tfds = tfds.prefetch(buffer_size=tf.data.AUTOTUNE)
     
     valsize = 271360 // int(config["batch_size"])
     valds = tfds.take(valsize)
@@ -130,6 +133,9 @@ def create_model(config):
     
     # Additionally, select a subset of GPUs
     strategy = MirroredStrategy(gpus)
+    
+    # This is the only departure from a classic model creation standpoint
+    # By including model creation in a distributed strategy, the model DAG will be pushed to whatever acceleration device you passed
     with strategy.scope():
         
         model = Model(**build_model())
@@ -141,8 +147,8 @@ def create_model(config):
                       optimizer=optimizer, 
                       loss_weights=loss_weights, 
                       metrics=metrics)
-        model.summary()
-    
+        
+    model.summary()
     return model
 
 def train_mlp(config, num_epochs):
@@ -178,6 +184,15 @@ def main():
 
 if __name__ == '__main__':
     
+    # Let it fail if no GPUs available. We want to scale over HW acceleration
     tf.config.set_soft_device_placement(False)
+    
+    # Potential for optimization with inter and intra op parallelism threads
+    tf.config.threading.set_inter_op_parallelism_threads(num_threads=16)
+    tf.config.threading.set_intra_op_parallelism_threads(num_threads=16)
+    
+    # Not really specific to distributed training:
+    # @tf.function defers the execution of regular code to the DAG, for optimization purposes. Its usage is encouraged whenever possible
+    # See https://www.tensorflow.org/guide/intro_to_graphs and https://www.tensorflow.org/api_docs/python/tf/function for more information
     
     main()

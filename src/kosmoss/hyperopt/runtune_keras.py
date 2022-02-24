@@ -8,11 +8,10 @@ import tensorflow as tf
 from kosmoss import CACHE_DATA_PATH
 
 @tf.keras.utils.register_keras_serializable()
-class HRLayer(tf.keras.layers.Layer):
+class HeatingRateLayer(tf.keras.layers.Layer):
     
-    def __init__(self, name=None, **kwargs):
-        super(HRLayer, self).__init__(name=name, **kwargs)
-        self.g_cp = tf.constant(9.80665 / 1004 * 24 * 3600)
+    gravitational_cst = 9.80665
+    specific_heat_cst = 1004
         
     def build(self, input_shape):
         pass
@@ -25,7 +24,9 @@ class HRLayer(tf.keras.layers.Layer):
         flux_diff = netflux[..., 1:] - netflux[..., :-1]
         net_press = hlpress[..., 1:, 0] - hlpress[..., :-1, 0]
         
-        return -self.g_cp * tf.math.divide(flux_diff, net_press)
+        gcp = -self.gravitational_cst / self.specific_heat_cst * 24 * 3600
+        
+        return gcp * tf.math.divide(flux_diff, net_press)
 
     
 def create_datasets(config):
@@ -84,13 +85,11 @@ def create_model(config):
 
         # Assuming inputs have the order: scalar, column, hl, inter, pressure_hl
         input_spec = config['input_spec']
-        all_inp = [tf.keras.Input(input_spec[k].shape[1:], name=k) 
+        inputs = [tf.keras.Input(input_spec[k].shape[1:], name=k) 
                    for k in input_spec.keys()]
 
-        col_inp = tf.keras.layers.Flatten()(all_inp[1])
-        hl_inp = tf.keras.layers.Flatten()(all_inp[2])
-        inter_inp = tf.keras.layers.Flatten()(all_inp[3])
-        dense = tf.keras.layers.Concatenate(axis=-1)([all_inp[0], hl_inp, col_inp, inter_inp])
+        dense = tf.keras.layers.Concatenate(axis=-1)([
+            tf.keras.layers.Flatten()(in_) for in_ in inputs])
 
         for _ in range(config["depth"]):
 
@@ -107,10 +106,10 @@ def create_model(config):
         sw_diff = tf.keras.layers.Dense(138, activation='linear', name="sw_diff")(dense)
         sw_add = tf.keras.layers.Dense(138, activation="linear", name="sw_add")(dense)
 
-        hr_sw = HRLayer(name="hr_sw")([sw_diff, all_inp[-1]])
+        hr_sw = HRLayer(name="hr_sw")([sw_diff, inputs[-1]])
 
         return {
-            "inputs": all_inp, 
+            "inputs": inputs, 
             "outputs": (sw_diff, sw_add, hr_sw)
         }
     
@@ -137,8 +136,8 @@ def train_mlp(config, num_epochs):
     
     model = create_model(config)
     model.fit(
-        train_ds,
-        validation_data=val_ds,
+        trainds,
+        validation_data=valds,
         epochs=num_epochs,
         verbose=0,
         callbacks=[
@@ -168,6 +167,7 @@ def main():
     
     analysis = tune.run(
         train_mlp_param,
+        config=config,
         metric="loss",
         mode="min",
         scheduler=AsyncHyperBandScheduler(
@@ -176,12 +176,12 @@ def main():
             reduction_factor=4
         ),
         search_alg=HEBOSearch(),
-        num_samples=10,
+        num_samples=1,
         resources_per_trial={
             "cpu": 8, 
             "gpu": 0
         },
-        config=config,
+        verbose=0,
     )
     
     print("Best hyperparameters found were: ", analysis.best_config)

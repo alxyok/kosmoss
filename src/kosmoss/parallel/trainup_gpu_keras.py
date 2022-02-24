@@ -63,9 +63,10 @@ def create_datasets(config):
         new_y["sw_diff"] = new_y["sw"][..., 0] - new_y["sw"][..., 1]
         new_y["sw_add"] = new_y["sw"][..., 0] + new_y["sw"][..., 1]
         new_y.pop("sw")
+        
+        print(new_x, new_y)
 
         return new_x, new_y
-    
 
     timestep = int(CONFIG['timestep'])
     cml.settings.set("cache-directory", CACHED_DATA_PATH)
@@ -78,14 +79,21 @@ def create_datasets(config):
     
     # All data operations are created in a DAG, and delayed to execution time, for optimization purpuses
     tfds = cmlds.to_tfdataset(batch_size=config["batch_size"], repeat=False)
-    tfds = tfds.map(parse_fn)
+    # for row in tfds.take(10):
+    #     print(row[0].keys(), row[1].keys())
+    # tfds = tfds.map(lambda x, y: parse_fn(x, y))
     
+    for row in tfds.take(1):
+        print(row)
     # Prefetch data while GPU is busy with training, so that CPU is never idle
     tfds = tfds.prefetch(buffer_size=tf.data.AUTOTUNE)
+    
     
     valsize = 271360 // int(config["batch_size"])
     valds = tfds.take(valsize)
     trainds = tfds.skip(valsize)
+    for row in valds.take(1):
+        print(row)
     
     return trainds, valds
 

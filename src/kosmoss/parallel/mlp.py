@@ -98,10 +98,10 @@ class LitMLP(ThreeDCorrectionModule):
 
         def __init__(self) -> None:
             super().__init__()
-            
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
             start_idx = 276 + 136 + 17
+    
     
     def __init__(self, 
                  in_channels: int, 

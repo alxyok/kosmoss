@@ -5,6 +5,7 @@ from setuptools import Command
 from kosmoss import CACHED_DATA_PATH
         
 cml.settings.set("cache-directory", CACHED_DATA_PATH)
+cml.settings.set("number-of-download-threads", 16)
 
 class Download(Command):
     

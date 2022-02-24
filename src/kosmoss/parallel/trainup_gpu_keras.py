@@ -123,20 +123,12 @@ def create_model(config):
             "outputs": (sw_diff, sw_add, hr_sw)
         }
     
+    # This function needs to be executed under a strategy scope to enable multi-GPU acceleration
+    def compile_model():
 
-    o = ['hr_sw', 'sw_diff', 'sw_add']
-    losses = {k: 'mse' for k in o}
-    loss_weights = {k: 1 for k in o}
-    
-    # List all GPUs visible in the system
-    gpus = tf.config.list_physical_devices('GPU')
-    
-    # Additionally, select a subset of GPUs
-    strategy = MirroredStrategy(gpus)
-    
-    # This is the only departure from a classic model creation standpoint
-    # By including model creation in a distributed strategy, the model DAG will be pushed to whatever acceleration device you passed
-    with strategy.scope():
+        o = ['hr_sw', 'sw_diff', 'sw_add']
+        losses = {k: 'mse' for k in o}
+        loss_weights = {k: 1 for k in o}
         
         model = Model(**build_model())
         
@@ -147,6 +139,24 @@ def create_model(config):
                       optimizer=optimizer, 
                       loss_weights=loss_weights, 
                       metrics=metrics)
+        return model
+    
+    
+    if config["enable_gpus"]:
+        # List all GPUs visible in the system
+        gpus = tf.config.list_physical_devices('GPU')
+        print(gpus)
+
+        # Additionally, select a subset of GPUs
+        strategy = MirroredStrategy(gpus)
+
+        # This is the only departure from a classic model creation standpoint
+        # By including model creation in a distributed strategy, the model DAG will be pushed to whatever acceleration device you passed
+        with strategy.scope():
+            model = compile_model()
+            
+    else:
+        model = compile_model()
         
     model.summary()
     return model
@@ -161,7 +171,6 @@ def train_mlp(config, num_epochs):
         trainds,
         validation_data=valds,
         epochs=num_epochs,
-        verbose=0,
         callbacks=config["callbacks"])
 
 
@@ -176,23 +185,30 @@ def main():
         "l1": 1e-3,
         "l2": 1e-3,
         "dropout": True,
-        "activation": "swish"
-        "callbacks": []
+        "activation": "swish",
+        "callbacks": [],
+        "enable_gpus": False
     }
     
     train_mlp(config, num_epochs)
 
 if __name__ == '__main__':
     
-    # Let it fail if no GPUs available. We want to scale over HW acceleration
+    tf.config.run_functions_eagerly(False)
+    
+    # Let it fail if no GPUs available. We want to scale over HW accelerated devices here
     tf.config.set_soft_device_placement(False)
     
     # Potential for optimization with inter and intra op parallelism threads
-    tf.config.threading.set_inter_op_parallelism_threads(num_threads=16)
-    tf.config.threading.set_intra_op_parallelism_threads(num_threads=16)
+    # tf.config.threading.set_inter_op_parallelism_threads(num_threads=16)
+    # tf.config.threading.set_intra_op_parallelism_threads(num_threads=16)
     
     # Not really specific to distributed training:
     # @tf.function defers the execution of regular code to the DAG, for optimization purposes. Its usage is encouraged whenever possible
-    # See https://www.tensorflow.org/guide/intro_to_graphs and https://www.tensorflow.org/api_docs/python/tf/function for more information
+    # See https://www.tensorflow.org/guide/intro_to_graphs and https://www.tensorflow.org/api_docs/python/tf/function for more info
+    
+    # Also, not currently stable as of tensorflow==2.8.0, MLIR optimization will come to TF
+    # See https://www.tensorflow.org/mlir for more info
+    # tf.config.experimental.enable_mlir_graph_optimization()
     
     main()

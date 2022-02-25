@@ -121,9 +121,15 @@ def create_model(config):
         
         # List all GPUs visible in the system
         gpus = tf.config.list_physical_devices('GPU')
+        gpus = [g.name.split("physical_device:")[-1] for g in gpus]
 
-        # Additionally, select a subset of GPUs
+        # Additionally, select only a subset of GPUs or limit GPU max memory with tf.config.experimental.set_memory_growth()
+        # 
         strategy = MirroredStrategy(gpus)
+        
+        # You can also go for multi-node, multi-gpu setup with tf.distribute.MultiWorkerMirroredStrategy()
+        # Be sure to setup a TF_CONFIG environment variable. See here: https://www.tensorflow.org/guide/distributed_training#setting_up_the_tf_config_environment_variable
+        # More info in https://www.tensorflow.org/api_docs/python/tf/distribute/MultiWorkerMirroredStrategy and https://www.tensorflow.org/guide/gpu
 
         # This is the only departure from a classic model creation standpoint
         # By including model creation in a distributed strategy, the model DAG will be pushed to whatever acceleration device you passed

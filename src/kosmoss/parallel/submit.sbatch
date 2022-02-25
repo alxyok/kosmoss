@@ -25,4 +25,4 @@ export PYTHONFAULTHANDLER=1
 export PL_TORCH_DISTRIBUTED_BACKEND='nccl'
 
 # run script from above
-srun python3 train.py
+srun python trainout.py

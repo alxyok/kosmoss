@@ -31,8 +31,14 @@ def main() -> None:
         datamodule = LitGNNDataModule(**config['data'])
         model = LitGAT(**config["model"])
     
+        logger = TensorBoardLogger(
+            save_dir=LOGS_PATH,
+            name='features_gnn_logs',
+            log_graph=True
+        )
+        
         kwargs = {
-            # "logger": WandbLogger(project=project),
+            "logger": logger,
             "gpus": num_gpus,
             "strategy": "ddp",
             "max_epochs": num_epochs,

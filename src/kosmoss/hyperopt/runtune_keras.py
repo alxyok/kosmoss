@@ -5,8 +5,7 @@ from ray.tune.integration.keras import TuneReportCallback
 
 from kosmoss.parallel.trainup_gpu_keras import train_mlp
 
-
-def main():
+def main() -> None:
     
     num_epochs = 50
     config = {

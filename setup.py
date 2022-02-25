@@ -22,7 +22,7 @@ setuptools.setup(
         "distutils.commands": [
             "download = kosmoss.dataproc.download:Download",
             "convert = kosmoss.dataproc.download:ConvertTFRecord",
-            "create_cache = kosmoss.dataproc.download:CreateCache",
+            "link_cache = kosmoss.dataproc.download:LinkCache",
         ]
     },
     package_data={

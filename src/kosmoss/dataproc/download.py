@@ -55,7 +55,7 @@ class ConvertTFRecord(Command):
         )
         cmlds.to_tfdataset(batch_size=self.batchsize)
 
-class CreateCache(Command):
+class LinkCache(Command):
     
     user_options = [
         ('srcpath=', 'p', "Path for the source 'cached' data dir."),

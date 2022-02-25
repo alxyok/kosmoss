@@ -40,9 +40,6 @@ RUN echo "Acquire::http::Proxy \"${http_proxy}\";" >> /etc/apt/apt.conf
 RUN apt update -y && apt upgrade -y
 RUN DEBIAN_FRONTEND=noninteractive TZ=Europe/Paris apt -y install tzdata
 RUN apt install -y build-essential \
-                   # python3.9 \
-                   # python3.9-dev \
-                   # python3.9-full \
                    diffutils \
                    libblas-dev \
                    liblapack-dev \
@@ -67,8 +64,8 @@ RUN ln -snf pip3 /usr/bin/pip
 
 # ---------------------------------------
 # Upgrade pip and install wheel
-RUN echo "http_proxy = ${http_proxy}" >> ${HOME}/.wgetrc \
-    && echo "https_proxy = ${http_proxy}" >> ${HOME}/.wgetrc \
+RUN echo "http_proxy=${http_proxy}" >> ${HOME}/.wgetrc \
+    && echo "https_proxy=${http_proxy}" >> ${HOME}/.wgetrc \
     && wget https://bootstrap.pypa.io/get-pip.py \
     && python3 get-pip.py \
     && rm get-pip.py

@@ -16,8 +16,8 @@ import torch
 from typing import List, Union
 
 from kosmoss import LOGS_PATH
-from kosmoss.hyperopt.data import LitGNNDataModule
-from kosmoss.hyperopt.models import LitGAT
+from kosmoss.hyperopt.graphs import LitGNNDataModule
+from kosmoss.hyperopt.graphnet import LitGAT
 
 
 def main() -> None:

@@ -8,6 +8,7 @@ HEBO
 matplotlib
 matplotlib-inline
 metaflow
+nbmake
 netCDF4
 numpy
 nvitop
@@ -16,6 +17,7 @@ pandas-profiling
 plotly
 psutil
 pylint
+pytest
 pytorch-lightning
 PyYAML
 ray[tune]

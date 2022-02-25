@@ -24,7 +24,9 @@ class BuildGraphsFlow(FlowSpec):
         
         import numpy as np
         
-        # Each 'common' step can store a shared property
+        # Each 'common' step can store a shared property to all steps
+        # Start is common here, and we branch on next step
+        # More info https://docs.metaflow.org/metaflow/basics#branch
         self.out_dir = osp.join(self.PROCESSED_DATA_PATH, f"graphs-{self.timestep}")
         if osp.isdir(self.out_dir):
             shutil.rmtree(self.out_dir)

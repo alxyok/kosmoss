@@ -5,7 +5,8 @@
 #SBATCH --ntasks-per-node=8
 #SBATCH --mem=0
 #SBATCH --time=0-00:30:00
-#SBATCH -p milan7513_A100
+#SBATCH -p dgx_a100
+#SBATCH --signal=SIGUSR1@90
 
 # activate conda env
 source activate $1

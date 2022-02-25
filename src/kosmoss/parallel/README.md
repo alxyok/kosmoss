@@ -1,3 +1,7 @@
+Covers only the training, not distributed inference
+
+
+
 PyTorch and TensorFlow are both viable options for DL framework. They are supported by respectively Meta (ex-Facebook) and Google, so their development is guaranteed for a million years.
 
 The following material only covers optimizations that happen at the application level and does not cover lower-level optimization schemes. It really is a hands-on approach.

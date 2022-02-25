@@ -1,4 +1,5 @@
 import climetlab as cml
+import os
 from ray import tune
 from ray.tune.schedulers import AsyncHyperBandScheduler
 from ray.tune.suggest.hebo import HEBOSearch
@@ -13,8 +14,6 @@ from tensorflow.keras.regularizers import l1_l2
 from tensorflow.keras.utils import register_keras_serializable
 
 from kosmoss import CACHED_DATA_PATH, CONFIG
-
-CACHED_DATA_PATH = "/home/jupyter/ECMWF/radiation/data/tf-dataset/train"
 
 @register_keras_serializable()
 class HeatingRateLayer(Layer):
@@ -118,7 +117,7 @@ def create_model(config):
         return model
     
     
-    if os.getenv("enable_gpus"):
+    if os.getenv("enable_gpus") == '1':
         
         # List all GPUs visible in the system
         gpus = tf.config.list_physical_devices('GPU')
@@ -169,7 +168,7 @@ def main():
 
 if __name__ == '__main__':
     
-    os.environ['enable_gpus'] = False
+    os.environ['enable_gpus'] = '0'
     
     tf.config.run_functions_eagerly(False)
     

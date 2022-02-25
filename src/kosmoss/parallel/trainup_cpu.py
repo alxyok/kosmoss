@@ -6,7 +6,7 @@ from typing import Union
 
 from kosmoss import CONFIG, LOGS_PATH, METADATA
 from kosmoss.parallel.data import FlattenedDataModule
-from kosmoss.parallel.models import LitMLP
+from kosmoss.parallel.mlp import LitMLP
 
 def main(batch_size: int,
          num_processes: int) -> None:

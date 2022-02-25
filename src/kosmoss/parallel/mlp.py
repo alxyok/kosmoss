@@ -48,16 +48,20 @@ class ThreeDCorrectionModule(LightningModule):
         
         return loss
 
+    
     def validation_step(self, 
                         batch: List[torch.Tensor], 
                         batch_idx: int) -> Tuple[torch.Tensor]:
         
-        y_hat, _ = self._common_step(batch, batch_idx, "val")
+        self._common_step(batch, batch_idx, "val")
 
+        
     def test_step(self, 
                   batch: List[torch.Tensor], 
                   batch_idx: int) -> Tuple[torch.Tensor]:
-        y_hat, _ = self._common_step(batch, batch_idx, "test")
+        
+        self._common_step(batch, batch_idx, "test")
+    
     
     def configure_optimizers(self) -> optim.Optimizer:
         

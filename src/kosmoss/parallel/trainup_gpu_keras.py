@@ -6,13 +6,15 @@ from ray.tune.integration.keras import TuneReportCallback
 import tensorflow as tf
 from tensorflow.distribute import MirroredStrategy
 from tensorflow.keras import Input, Model
-from tensorflow.keras.layers import Concatenate, Dense, Dropout, Flatten, Layer
+from tensorflow.keras.layers import Concatenate, Dense, Dropout, Flatten, Layer, Reshape
 from tensorflow.keras.metrics import MeanAbsoluteError
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l1_l2
 from tensorflow.keras.utils import register_keras_serializable
 
 from kosmoss import CACHED_DATA_PATH, CONFIG
+
+CACHED_DATA_PATH = "/home/jupyter/ECMWF/radiation/data/tf-dataset/train"
 
 @register_keras_serializable()
 class HeatingRateLayer(Layer):
@@ -26,7 +28,7 @@ class HeatingRateLayer(Layer):
     def call(self, inputs):
         
         hlpress = inputs[1] 
-        netflux = inputs[0]
+        netflux = inputs[0][:, 0] - inputs[0][:, 1]
         
         flux_diff = netflux[..., 1:] - netflux[..., :-1]
         net_press = hlpress[..., 1:, 0] - hlpress[..., :-1, 0]
@@ -37,36 +39,6 @@ class HeatingRateLayer(Layer):
 
 
 def create_datasets(config):
-
-    def parse_fn(x, y):
-        
-        new_x = {}
-        new_y = {}
-        
-        for key in x.keys():
-            
-            if key == 'col_inputs':
-                indices = [10, 23, 24, 25, 26]
-                new_x[key] = tf.gather(x['col_inputs'], indices, axis=2)
-                
-            elif key == 'sca_inputs':
-                indices = list(range(14)) + [16]
-                new_x[key] = tf.gather(x['sca_inputs'], indices, axis=1)
-                
-            else:
-                new_x[key] = x[key]
-                
-        for key in y.keys():
-            if "sw" in key:
-                new_y[key] = y[key]
-
-        new_y["sw_diff"] = new_y["sw"][..., 0] - new_y["sw"][..., 1]
-        new_y["sw_add"] = new_y["sw"][..., 0] + new_y["sw"][..., 1]
-        new_y.pop("sw")
-        
-        print(new_x, new_y)
-
-        return new_x, new_y
 
     timestep = int(CONFIG['timestep'])
     cml.settings.set("cache-directory", CACHED_DATA_PATH)
@@ -79,21 +51,13 @@ def create_datasets(config):
     
     # All data operations are created in a DAG, and delayed to execution time, for optimization purpuses
     tfds = cmlds.to_tfdataset(batch_size=config["batch_size"], repeat=False)
-    # for row in tfds.take(10):
-    #     print(row[0].keys(), row[1].keys())
-    # tfds = tfds.map(lambda x, y: parse_fn(x, y))
     
-    for row in tfds.take(1):
-        print(row)
     # Prefetch data while GPU is busy with training, so that CPU is never idle
-    tfds = tfds.prefetch(buffer_size=tf.data.AUTOTUNE)
-    
+    tfds = tfds.prefetch(buffer_size=tf.data.AUTOTUNE) 
     
     valsize = 271360 // int(config["batch_size"])
     valds = tfds.take(valsize)
     trainds = tfds.skip(valsize)
-    for row in valds.take(1):
-        print(row)
     
     return trainds, valds
 
@@ -121,20 +85,24 @@ def create_model(config):
             if config["dropout"]:
                 dense = Dropout(0.5)(dense)
 
-        sw_diff = Dense(138, activation='linear', name="sw_diff")(dense)
-        sw_add = Dense(138, activation="linear", name="sw_add")(dense)
+        sw = Dense(138 * 2, activation='linear')(dense)
+        lw = Dense(138 * 2, activation='linear')(dense)
+        
+        sw = Reshape((138, -1), name='sw')(sw)
+        lw = Reshape((138, -1), name='lw')(lw)
 
-        hr_sw = HeatingRateLayer(name="hr_sw")([sw_diff, inputs[-1]])
+        hr_sw = HeatingRateLayer(name="hr_sw")([sw, inputs[-1]])
+        hr_lw = HeatingRateLayer(name="hr_lw")([lw, inputs[-1]])
 
         return {
             "inputs": inputs, 
-            "outputs": (sw_diff, sw_add, hr_sw)
+            "outputs": (sw, hr_sw, lw, hr_lw)
         }
     
     # This function needs to be executed under a strategy scope to enable multi-GPU acceleration
     def compile_model():
 
-        o = ['hr_sw', 'sw_diff', 'sw_add']
+        o = ['sw', 'hr_sw', 'lw', 'hr_lw']
         losses = {k: 'mse' for k in o}
         loss_weights = {k: 1 for k in o}
         
@@ -150,10 +118,10 @@ def create_model(config):
         return model
     
     
-    if config["enable_gpus"]:
+    if os.getenv("enable_gpus"):
+        
         # List all GPUs visible in the system
         gpus = tf.config.list_physical_devices('GPU')
-        print(gpus)
 
         # Additionally, select a subset of GPUs
         strategy = MirroredStrategy(gpus)
@@ -194,13 +162,14 @@ def main():
         "l2": 1e-3,
         "dropout": True,
         "activation": "swish",
-        "callbacks": [],
-        "enable_gpus": False
+        "callbacks": []
     }
     
     train_mlp(config, num_epochs)
 
 if __name__ == '__main__':
+    
+    os.environ['enable_gpus'] = False
     
     tf.config.run_functions_eagerly(False)
     

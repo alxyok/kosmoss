@@ -15,7 +15,7 @@ from ray.tune.suggest.hebo import HEBOSearch
 import torch
 from typing import List, Union
 
-from kosmoss import ARTIFACTS_PATH, LOGS_PATH
+from kosmoss import LOGS_PATH
 from kosmoss.hyperopt.data import LitGNNDataModule
 from kosmoss.hyperopt.models import LitGAT
 
@@ -133,6 +133,9 @@ def main() -> None:
 
 if __name__ == '__main__':
     
+    os.environ["WANDB_DIR"] = LOGS_PATH
+    
     # Turn on this flag to allow the report callback to fail gracefully if all metrics are not populated at each 'on' step
     os.environ["TUNE_DISABLE_STRICT_METRIC_CHECKING"] = 1
+    
     main()

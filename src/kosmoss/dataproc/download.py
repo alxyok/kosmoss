@@ -1,8 +1,10 @@
+import os
+import os.path as osp
 import climetlab as cml
 from distutils.errors import DistutilsArgError
 from setuptools import Command
 
-from kosmoss import CACHED_DATA_PATH
+from kosmoss import CACHED_DATA_PATH, DATA_PATH
         
 cml.settings.set("cache-directory", CACHED_DATA_PATH)
 cml.settings.set("number-of-download-threads", 16)
@@ -52,3 +54,26 @@ class ConvertTFRecord(Command):
             hr_units="K d-1",
         )
         cmlds.to_tfdataset(batch_size=self.batchsize)
+
+class CreateCache(Command):
+    
+    user_options = [
+        ('srcpath=', 'p', "Path for the source 'cached' data dir."),
+    ]
+    
+    def initialize_options(self):
+        self.srcpath = None
+        
+    def finalize_options(self):
+        if not self.srcpath:
+            raise DistutilsArgError("You must specify --srcpath option")
+    
+    def run(self):
+        
+        os.makedirs(DATA_PATH, exist_ok=True)
+        
+        if osp.isdir(CACHED_DATA_PATH):
+            print(f"directory: {CACHED_DATA_PATH} already exists, failing gracefully...")
+            return
+            
+        os.symlink(self.srcpath, CACHED_DATA_PATH, target_is_directory=True)

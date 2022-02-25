@@ -30,7 +30,7 @@ class BuildGraphsFlow(FlowSpec):
         self.out_dir = osp.join(self.PROCESSED_DATA_PATH, f"graphs-{self.timestep}")
         if osp.isdir(self.out_dir):
             shutil.rmtree(self.out_dir)
-            os.makedirs(self.out_dir)
+        os.makedirs(self.out_dir)
         
         # To launch in thread in parallel, just call the next step over an attribute's list
         self.shard = np.arange(self.num_shards)

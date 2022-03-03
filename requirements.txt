@@ -1,6 +1,7 @@
 climetlab
 climetlab-maelstrom-nogwd
 climetlab-maelstrom-radiation
+cupy-cuda110
 dask
 eccodes
 h5py

@@ -1,32 +1,32 @@
-# [build-system]
-# requires = [
-#     "setuptools>=42",
-#     "wheel", 
-#     "setuptools_scm[toml]>=6.2"
-# ]
-# build-backend = "setuptools.build_meta"
-
-[tool.poetry]
-name = "kosmoss"
-version = "0.1.0"
-description = "Bootcamp"
-license = "MIT"
-authors = ["alxyok <alxyok@naiama.com>"]
-readme = "README.md"
-packages = [{include = "src/kosmoss"}]
-
-[tool.poetry.dependencies]
-python = "^3.7"
-climetlab = "^0.10"
-climetlab-maelstrom-nogwd = "^0.2"
-climetlab-maelstrom-radiation = "^0.5"
-dask = "2022.02.0"
-eccodes = "2.24.2"
-h5py = "3.6.0"
-HEBO = "0.3.2"
-matplotlib = "3.5.1"
-matplotlib-
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+    "setuptools>=42",
+    "wheel", 
+    "setuptools_scm[toml]>=6.2"
+]
+build-backend = "setuptools.build_meta"
+
+# [tool.poetry]
+# name = "kosmoss"
+# version = "0.1.0"
+# description = "Bootcamp"
+# license = "MIT"
+# authors = ["alxyok <alxyok@naiama.com>"]
+# readme = "README.md"
+# packages = [{include = "src/kosmoss"}]
+
+# [tool.poetry.dependencies]
+# python = "^3.7"
+# climetlab = "^0.10"
+# climetlab-maelstrom-nogwd = "^0.2"
+# climetlab-maelstrom-radiation = "^0.5"
+# dask = "2022.02.0"
+# eccodes = "2.24.2"
+# h5py = "3.6.0"
+# HEBO = "0.3.2"
+# matplotlib = "3.5.1"
+# matplotlib-
+
+# [build-system]
+# requires = ["poetry-core"]
+# build-backend = "poetry.core.masonry.api"

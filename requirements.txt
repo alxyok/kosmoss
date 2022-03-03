@@ -6,6 +6,7 @@ dask
 eccodes
 h5py
 HEBO
+jupyterlab
 matplotlib
 metaflow
 mpi4py

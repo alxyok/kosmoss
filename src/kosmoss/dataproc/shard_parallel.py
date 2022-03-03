@@ -28,16 +28,27 @@ def main() -> None:
         start = rank * 53 * 2 ** 4 + subidx * 4800
         end = start + 4800
 
-        with h5py.File(h5_path, 'r') as feats:
-
-            # Give the output file a unique name to avoid overriting
-            name = (rank + 1) * (subidx + 1)
-            sharded_path = osp.join(out_dir, f'features-{name}.h5')
-            with h5py.File(sharded_path, 'w') as sharded:
-
-                sharded.create_dataset("/x", data=feats['/x'][start:end])
-                sharded.create_dataset("/y", data=feats['/y'][start:end])
-                sharded.create_dataset("/edge", data=feats['/edge'][start:end])
+        # h5py is not built for concurrency, and os error can occur
+        # So we have to loop until the lock is released
+        while True:
+            try:
+                with h5py.File(h5_path, 'r') as feats:
+                    x = feats['/x'][start:end]
+                    y = feats['/y'][start:end]
+                    edge = feats['/edge'][start:end]
+                break
+                
+            except BlockingIOError:
+                pass
+                    
+        # Give the output file a unique name to avoid overriting
+        name = (rank + 1) * (subidx + 1)
+        sharded_path = osp.join(out_dir, f'features-{name}.h5')
+        
+        with h5py.File(sharded_path, 'w') as sharded:
+            sharded.create_dataset("/x", data=x)
+            sharded.create_dataset("/y", data=y)
+            sharded.create_dataset("/edge", data=edge)
                 
     print(f'ending session for worker of rank {rank}.')
     

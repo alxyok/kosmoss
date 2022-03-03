@@ -12,7 +12,7 @@ def main() -> None:
     # So we don't read the timestep variable from the config.yaml file and instead, have to fix the value
     timestep = 1000
     h5_path = osp.join(PROCESSED_DATA_PATH, f'features-{timestep}.h5')
-    out_dir = osp.join(PROCESSED_DATA_PATH, f"features-{timestep}")
+    out_dir = osp.join(PROCESSED_DATA_PATH, f"features-{timestep}", "h5")
     os.makedirs(out_dir, exist_ok=True)
 
     # The MPI Rank uniquely identify each process

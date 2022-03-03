@@ -9,7 +9,7 @@ description = "Bootcamp"
 license = "MIT"
 authors = ["alxyok <alxyok@naiama.com>"]
 readme = "README.md"
-packages = [{include = "src/kosmoss"}]
+packages = [{include = "kosmoss", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "3.7.12"

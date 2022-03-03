@@ -100,6 +100,7 @@ RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
 
 # ---------------------------------------
 # Install requirements for this project
+ENV HOME /root
 COPY ../requirements.txt ${HOME}
 RUN python -m pip install -r ${HOME}/requirements.txt
 

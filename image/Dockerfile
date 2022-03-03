@@ -112,4 +112,5 @@ COPY image/.pylintrc /etc/pylintrc
 
 EXPOSE 6006
 
-CMD ["jupyter", "lab"]
+# To make it runnable
+# CMD ["jupyter", "lab"]

@@ -107,8 +107,8 @@ RUN python -m pip install -r /root/requirements.txt
 # ---------------------------------------
 # Misc configuration
 RUN mkdir ${HOME}/.jupyter
-COPY jupyter_server_config.py ${HOME}/.jupyter/
-COPY .pylintrc /etc/pylintrc
+COPY image/jupyter_server_config.py /root/.jupyter/
+COPY image/.pylintrc /etc/pylintrc
 
 EXPOSE 6006
 

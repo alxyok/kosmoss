@@ -89,24 +89,34 @@ RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
 RUN pip install climetlab \
                 climetlab-maelstrom-nogwd \
                 climetlab-maelstrom-radiation \
+                cupy-cuda113 \
                 dask \
+                eccodes \
+                h5py \
+                HEBO \
                 matplotlib \
                 metaflow \
-                memory_profiler \
+                mpi4py \
                 netCDF4 \
-                jupyterlab \
                 numpy \
                 nvitop \
-                pandas \
-                plotly \
+                psutil \
+                pylint \
+                pytest \
                 pytorch-lightning \
                 PyYAML \
-                randomname \
+                ray[tune] \
                 scipy \
                 sklearn \
+                torch \
+                torch-cluster \
+                torch-geometric \
+                torch-optimizer \
+                torch-scatter \
+                torch-sparse \
+                torch-spline-conv \
                 torchmetrics \
-                torch_optimizer \
-                xarray
+                wandb 
 
 
 # ---------------------------------------

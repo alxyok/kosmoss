@@ -1,7 +1,7 @@
 FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
 
 LABEL maintainer="mlops"
-LABEL name="Thessaloniki"
+LABEL name="Kosmoss-Ubuntu"
 LABEL type="Development Image"
 
 ARG PROXY
@@ -18,7 +18,11 @@ ENV HTTP_PROXY ${PROXY}
 RUN echo "Acquire::http::Proxy \"${http_proxy}\";" >> /etc/apt/apt.conf
 RUN apt update -y && apt upgrade -y
 RUN DEBIAN_FRONTEND=noninteractive TZ=Europe/Paris apt -y install tzdata
-RUN apt install -y build-essential \
+RUN apt install -y apt-utils \
+                   python3.8 \
+                   python3.8-dev \
+                   python3.8-full \
+                   build-essential \
                    diffutils \
                    libblas-dev \
                    liblapack-dev \
@@ -29,11 +33,16 @@ RUN apt install -y build-essential \
                    gfortran \
                    man-db \
                    htop \
+                   wget \
+                   git \
+                   curl \
+                   sudo \
+                   vim \
     && apt clean all \
     && rm -rf /var/cache/apt/*
 
-RUN ln -snf python3 /usr/bin/python
-RUN ln -snf pip3 /usr/bin/pip
+RUN ln -sf python3 /usr/bin/python
+RUN ln -sf pip3 /usr/bin/pip
 
 
 # ---------------------------------------
@@ -41,33 +50,33 @@ RUN ln -snf pip3 /usr/bin/pip
 RUN echo "http_proxy=${http_proxy}" >> ${HOME}/.wgetrc \
     && echo "https_proxy=${http_proxy}" >> ${HOME}/.wgetrc \
     && wget https://bootstrap.pypa.io/get-pip.py \
-    && python3 get-pip.py \
+    && python get-pip.py \
     && rm get-pip.py
-RUN pip install --upgrade pip
-RUN pip install wheel
+RUN python -m pip install --upgrade pip
+RUN python -m pip install wheel
 
 
 # ---------------------------------------
 # Install cuPy
-RUN pip install cupy-cuda113
+RUN python -m pip install cupy-cuda113
 
 
 # ---------------------------------------
 # Install PyTorch and PyG
-RUN pip install torch==1.10.2+cu113 \
-                torchvision==0.11.3+cu113 \
-                torchaudio===0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+RUN python -m pip install torch==1.10.2+cu113 \
+                          torchvision==0.11.3+cu113 \
+                          torchaudio===0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 
-RUN pip install torch-scatter \
-                torch-sparse \
-                torch-cluster \
-                torch-spline-conv \
-                torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
+RUN python -m pip install torch-scatter \
+                          torch-sparse \
+                          torch-cluster \
+                          torch-spline-conv \
+                          torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
    
    
 # ---------------------------------------
 # Install TensorFlow + TensorBoard
-RUN pip install tensorflow
+RUN python -m pip install tensorflow
 
 
 # ---------------------------------------
@@ -86,37 +95,15 @@ RUN export CC=mpicc \
     && pip install mpi4py \
     && pip install --no-binary=h5py h5py
 RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
-RUN pip install climetlab \
-                climetlab-maelstrom-nogwd \
-                climetlab-maelstrom-radiation \
-                cupy-cuda113 \
-                dask \
-                eccodes \
-                h5py \
-                HEBO \
-                matplotlib \
-                metaflow \
-                mpi4py \
-                netCDF4 \
-                numpy \
-                nvitop \
-                psutil \
-                pylint \
-                pytest \
-                pytorch-lightning \
-                PyYAML \
-                ray[tune] \
-                scipy \
-                sklearn \
-                torch \
-                torch-cluster \
-                torch-geometric \
-                torch-optimizer \
-                torch-scatter \
-                torch-sparse \
-                torch-spline-conv \
-                torchmetrics \
-                wandb 
+
+
+
+# ---------------------------------------
+# Install requirements for this project
+WORKDIR ${HOME}
+COPY ../requirements.txt ${HOME}
+RUN python -m pip install -r requirements.txt
+
 
 
 # ---------------------------------------
@@ -124,5 +111,7 @@ RUN pip install climetlab \
 RUN mkdir ${HOME}/.jupyter
 COPY jupyter_server_config.py ${HOME}/.jupyter/
 COPY .pylintrc /etc/pylintrc
+
+EXPOSE 6006
 
 CMD ["jupyter", "lab"]

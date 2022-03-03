@@ -6,14 +6,11 @@ eccodes
 h5py
 HEBO
 matplotlib
-matplotlib-inline
 metaflow
-nbmake
 netCDF4
 numpy
 nvitop
 pandas
-pandas-profiling 
 plotly
 psutil
 pylint
@@ -21,9 +18,7 @@ pytest
 pytorch-lightning
 PyYAML
 ray[tune]
-scikit-learn
 scipy
-seaborn
 sklearn
 torch
 torch-cluster

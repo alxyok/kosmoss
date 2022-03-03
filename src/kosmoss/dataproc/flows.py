@@ -10,7 +10,7 @@ class BuildGraphsFlow(FlowSpec):
 
     # ...you can just add parameters to be read from the command line
     timestep = Parameter('timestep', help='Temporal sampling step', default=1000)
-    num_shards = Parameter('num_shards', help='Number of shards', default=6784)
+    num_shards = Parameter('num_shards', help='Number of shards', default=3392)
     dtype = Parameter('dtype', help="NumPy's dtype", default='float32')
     x_shape = Parameter('x_shape', help='Shape for x', default=(160, 136, 20))
     y_shape = Parameter('y_shape', help='Shape for y', default=(160, 138, 4))

@@ -1,6 +1,7 @@
 import h5py
 from mpi4py import MPI
 import numpy as np
+import os
 import os.path as osp
 
 from kosmoss import PROCESSED_DATA_PATH

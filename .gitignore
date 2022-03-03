@@ -11,6 +11,7 @@
 # generated from build system
 poetry.lock
 **/build
+**/dist
 *.egg-info/
 *.egg
 __pycache__/

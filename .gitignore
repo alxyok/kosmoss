@@ -9,9 +9,10 @@
 *.ipynb_checkpoints
 
 # generated from build system
-poetry.lock
 **/build
 **/dist
 *.egg-info/
 *.egg
 __pycache__/
+__pypackages__/
+.pdm.toml

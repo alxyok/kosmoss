@@ -1,14 +1,12 @@
 # kosmoss
 
-Prerequisites: valid CUDA install.
+Prerequisites: valid [CUDA install](https://developer.nvidia.com/cuda-downloads) and [Poetry](https://python-poetry.org/docs/master/#installing-with-the-official-installer).
 
 To install:
-* `git clone` this repo
-* `cd kosmoss` to enter project directory
-* `python -m pip install -r requirements.txt` to install project dependencies
-* `python -m pip install .` to install the project as a library
-* `python setup.py download -t 250` to download a substantial dataset for all PyTorch + Lightning content
-* Optionally, `python setup.py convert -t 500` to download and convert a reduced dataset for optional TensorFlow + Keras content
+* `git clone` this repo and `cd` into it
+* `poetry install` to install this project as a library with its dependencies
+* `poetry run download` to download data for PyTorch + Lightning content
+* `poetry run download_tfrecords` to download data for TensorFlow + Keras content
 
 One note
 1. All of the material is based on the work of AI4sim team on a real-world use-case for ECMWF

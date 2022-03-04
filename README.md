@@ -1,5 +1,14 @@
 # kosmoss
 
+## Content
+What this is: a bootsrap to scaling mechanics.
+
+What this is not: 
+* A gentle introduction to Deep Learning or Machine Learning
+* An in-depth look at cutting-edge innovations in AI
+
+
+## Install
 Prerequisites: valid [CUDA install](https://developer.nvidia.com/cuda-downloads) and [Poetry](https://python-poetry.org/docs/master/#installing-with-the-official-installer).
 
 To install:
@@ -8,7 +17,7 @@ To install:
 * `poetry run download` to download data for PyTorch + Lightning content
 * `poetry run download_tfrecords` to download data for TensorFlow + Keras content
 
-One note
+One note though
 1. All of the material is based on the work of AI4sim team on a real-world use-case for ECMWF
 2. This is just an introduction, not a comprehensive, in-depth, hands-on material
 3. No low-level optimizations

@@ -13,6 +13,7 @@ Prerequisites: valid [CUDA install](https://developer.nvidia.com/cuda-downloads)
 
 To install:
 * `git clone` this repo and `cd` into it
+* `poetry config virtualenvs.create false --local` to install without virtual env
 * `poetry install` to install this project as a library with its dependencies
 * `poetry run download` to download data for PyTorch + Lightning content
 * `poetry run download_tfrecords` to download data for TensorFlow + Keras content

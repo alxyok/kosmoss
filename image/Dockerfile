@@ -73,7 +73,6 @@ RUN export CC=mpicc \
     && python -m pip install mpi4py \
     && python -m pip install --no-binary=h5py h5py
 RUN C_INCLUDE_PATH=/usr/include/python3.8 python -m pip install bottleneck
-COPY requirements.txt .
 RUN python -m pip install \
     torch==1.10.2+cu113 \
     torchvision==0.11.3+cu113 \
@@ -84,6 +83,9 @@ RUN python -m pip install \
     torch-cluster \
     torch-spline-conv \
     torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
+    
+COPY . /root
+WORKDIR /root/kosmoss
 RUN python -m pip install -r requirements.txt
 
 

@@ -1,8 +1,9 @@
+bottleneck
 climetlab
 climetlab-maelstrom-nogwd
 climetlab-maelstrom-radiation
 cupy-cuda113
-dask
+dask[complete]
 eccodes
 h5py
 HEBO

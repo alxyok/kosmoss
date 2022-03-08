@@ -54,7 +54,6 @@ RUN echo "http_proxy=${http_proxy}" >> ${HOME}/.wgetrc \
     && python get-pip.py \
     && rm get-pip.py
 RUN python -m pip install --upgrade pip
-RUN python -m pip install wheel
 
 
 # ---------------------------------------
@@ -70,21 +69,20 @@ RUN wget https://confluence.ecmwf.int/download/attachments/45757960/${ECCODES}.t
     && make install
 RUN export CC=mpicc \
     && HDF5_MPI="ON" \
-    && pip install mpi4py \
-    && pip install --no-binary=h5py h5py
-RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
+    && python -m pip install mpi4py \
+    && python -m pip install --no-binary=h5py h5py
+RUN C_INCLUDE_PATH=/usr/include/python3.8 python -m pip install bottleneck
+COPY requirements.txt .
+RUN python -m pip install torch==1.10.2+cu113 \
+                          torchvision==0.11.3+cu113 \
+                          torchaudio===0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+RUN python -m pip install torch-scatter \
+                          torch-sparse \
+                          torch-cluster \
+                          torch-spline-conv \
+                          torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
+RUN python -m pip install -r requirements.txt
 
-
-
-# ---------------------------------------
-# Install requirements for this project
-SHELL ["/bin/bash", "-c"]
-COPY . /root
-RUN curl -sSL https://install.python-poetry.org | python3 - \
-    && echo "export PATH=/root/.local/bin:${PATH}" >> /root/.bashrc
-WORKDIR /root/kosmoss
-RUN /root/.local/bin/poetry install \
-    && source $(poetry env info --path)/bin/activate
 
 
 # ---------------------------------------

@@ -32,4 +32,4 @@ if osp.isfile(metadata_path):
     METADATA = utils.load_attr(metadata_path, 'json')
     
 # As of 2022.03, poetry still cannot provide a solution for a single place of truth for version so this value has to be duplicated from pyproject.toml
-__version__ = "0.1.1"
+__version__ = "0.1.2"

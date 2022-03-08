@@ -22,6 +22,8 @@ ray[tune]
 scipy
 sklearn
 torch
+torchaudio
+torchvision
 torch-cluster
 torch-geometric
 torch-optimizer

@@ -29,6 +29,7 @@ RUN apt install -y apt-utils \
                    libatlas-base-dev \
                    libglib2.0-0 \
                    libhdf5-mpi-dev \
+                   pkg-config \
                    cmake \
                    gfortran \
                    man-db \
@@ -57,29 +58,6 @@ RUN python -m pip install wheel
 
 
 # ---------------------------------------
-# Install cuPy
-RUN python -m pip install cupy-cuda113
-
-
-# ---------------------------------------
-# Install PyTorch and PyG
-RUN python -m pip install torch==1.10.2+cu113 \
-                          torchvision==0.11.3+cu113 \
-                          torchaudio===0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
-
-RUN python -m pip install torch-scatter \
-                          torch-sparse \
-                          torch-cluster \
-                          torch-spline-conv \
-                          torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
-   
-   
-# ---------------------------------------
-# Install TensorFlow + TensorBoard
-RUN python -m pip install tensorflow
-
-
-# ---------------------------------------
 # Install a few other usefull packages for scientific-ML
 WORKDIR /tmp/
 ENV ECCODES "eccodes-2.24.0-Source"
@@ -100,8 +78,12 @@ RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
 
 # ---------------------------------------
 # Install requirements for this project
-COPY requirements.txt /root
-RUN python -m pip install -r /root/requirements.txt
+COPY . /root
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && export PATH=/root/.local/bin:${PATH}
+WORKDIR /root/kosmoss
+RUN poetry install 
+    && source $(poetry env info --path)/bin/activate
 
 
 # ---------------------------------------
@@ -112,5 +94,4 @@ COPY image/.pylintrc /etc/pylintrc
 
 EXPOSE 6006
 
-# To make it runnable
-# CMD ["jupyter", "lab"]
+CMD ["jupyter", "lab"]

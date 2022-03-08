@@ -80,7 +80,8 @@ RUN C_INCLUDE_PATH=/usr/include/python3.9 pip install bottleneck
 # Install requirements for this project
 COPY . /root
 RUN curl -sSL https://install.python-poetry.org | python3 - \
-    && export PATH=/root/.local/bin:${PATH}
+    && echo "export PATH=/root/.local/bin:${PATH}" >> /root/.bashrc \
+    && source /root/.bashrc
 WORKDIR /root/kosmoss
 RUN poetry install \
     && source $(poetry env info --path)/bin/activate

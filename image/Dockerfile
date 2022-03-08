@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
+FROM nvidia/cuda:11.3.0-cudnn8-devel-ubuntu20.04
 
 LABEL maintainer="mlops"
 LABEL name="Kosmoss-Ubuntu"
@@ -18,27 +18,28 @@ ENV HTTP_PROXY ${PROXY}
 RUN echo "Acquire::http::Proxy \"${http_proxy}\";" >> /etc/apt/apt.conf
 RUN apt update -y && apt upgrade -y
 RUN DEBIAN_FRONTEND=noninteractive TZ=Europe/Paris apt -y install tzdata
-RUN apt install -y apt-utils \
-                   python3.8 \
-                   python3.8-dev \
-                   python3.8-full \
-                   build-essential \
-                   diffutils \
-                   libblas-dev \
-                   liblapack-dev \
-                   libatlas-base-dev \
-                   libglib2.0-0 \
-                   libhdf5-mpi-dev \
-                   pkg-config \
-                   cmake \
-                   gfortran \
-                   man-db \
-                   htop \
-                   wget \
-                   git \
-                   curl \
-                   sudo \
-                   vim \
+RUN apt install -y --no-install-recommends \
+    apt-utils \
+    python3.8 \
+    python3.8-dev \
+    python3.8-full \
+    build-essential \
+    diffutils \
+    libblas-dev \
+    liblapack-dev \
+    libatlas-base-dev \
+    libglib2.0-0 \
+    libhdf5-mpi-dev \
+    pkg-config \
+    cmake \
+    gfortran \
+    man-db \
+    htop \
+    wget \
+    git \
+    curl \
+    sudo \
+    vim \
     && apt clean all \
     && rm -rf /var/cache/apt/*
 
@@ -73,14 +74,16 @@ RUN export CC=mpicc \
     && python -m pip install --no-binary=h5py h5py
 RUN C_INCLUDE_PATH=/usr/include/python3.8 python -m pip install bottleneck
 COPY requirements.txt .
-RUN python -m pip install torch==1.10.2+cu113 \
-                          torchvision==0.11.3+cu113 \
-                          torchaudio===0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
-RUN python -m pip install torch-scatter \
-                          torch-sparse \
-                          torch-cluster \
-                          torch-spline-conv \
-                          torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
+RUN python -m pip install \
+    torch==1.10.2+cu113 \
+    torchvision==0.11.3+cu113 \
+    torchaudio===0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+RUN python -m pip install \
+    torch-scatter \
+    torch-sparse \
+    torch-cluster \
+    torch-spline-conv \
+    torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
 RUN python -m pip install -r requirements.txt
 
 

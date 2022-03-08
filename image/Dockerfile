@@ -85,7 +85,7 @@ RUN python -m pip install \
     torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu113.html
     
 WORKDIR /root
-COPY . ./
+COPY . .
 RUN python -m pip install -r requirements.txt
 
 RUN curl -sSL https://install.python-poetry.org | python3 - \

@@ -21,7 +21,14 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "kosmoss"
+<<<<<<< HEAD
 authors = [{name = "alxyok", email = "alxyok@naiama.com"}]
+=======
+version = "0.1.6"
+description = "Bootcamp"
+license = "MIT"
+authors = ["alxyok <alxyok@naiama.com>"]
+>>>>>>> 5422f00838d93b0c409ffd0cee61e0f25d4c5cc9
 readme = "README.md"
 description = "Bootcamp"
 license = {file = "LICENSE.txt"}

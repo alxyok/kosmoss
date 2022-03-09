@@ -9,7 +9,7 @@ What this is not:
 
 
 ## Install
-Prerequisites: valid [CUDA install](https://developer.nvidia.com/cuda-downloads) and [Poetry](https://python-poetry.org/docs/master/#installing-with-the-official-installer).
+Prerequisites: valid [CUDA install](https://developer.nvidia.com/cuda-downloads).
 
 To install:
 * `git clone` this repo and `cd` into it

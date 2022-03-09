@@ -1,3 +1,3 @@
-timestep: 1000
+timestep: 250
 num_workers: 16
 loading_mode: 'efficient'

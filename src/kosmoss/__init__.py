@@ -30,3 +30,5 @@ CONFIG = utils.load_attr(osp.join(ROOT_PATH, "config.yaml"), 'yaml')
 metadata_path = osp.join(ROOT_PATH, "metadata.json")
 if osp.isfile(metadata_path):
     METADATA = utils.load_attr(metadata_path, 'json')
+    
+__version__ = "0.1.6"
